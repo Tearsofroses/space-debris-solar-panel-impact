@@ -1,0 +1,43 @@
+{
+  "reference_scenario": "inputs/scenarios/baseline.json",
+  "mass_speed_grid": {
+    "mass_min_kg": 1.0e-6, "mass_max_kg": 10.0, "n_mass": 71,
+    "speed_min_m_s": 1000.0, "speed_max_m_s": 15000.0, "n_speed": 57
+  },
+  "impact_angle_sweep": {
+    "angle_min_deg": 0.0, "angle_max_deg": 89.0, "n_angle": 179,
+    "restitution_values": [0.0, 0.5, 1.0]
+  },
+  "restitution_sweep": { "n_points": 101 },
+  "mass_ratio_sweep": {
+    "ratio_min": 1.0e-6, "ratio_max": 100.0, "n_points": 241,
+    "restitution_values": [0.0, 0.5, 1.0]
+  },
+  "monte_carlo": {
+    "seed": 42,
+    "n_impacts": 20000,
+    "mass_min_kg": 1.0e-6,
+    "mass_max_kg": 1.0e-2,
+    "mass_cumulative_power_index": 0.87,
+    "speed_mean_m_s": 10000.0,
+    "speed_std_m_s": 2500.0,
+    "speed_min_m_s": 1000.0,
+    "speed_max_m_s": 16000.0,
+    "restitution_min": 0.0,
+    "restitution_max": 1.0,
+    "spin_rate_alarm_deg_s": 1.0
+  },
+  "extreme_cases": [
+    {"name": "vanishing debris mass (1 microgram)", "debris_mass_kg": 1.0e-9},
+    {"name": "equal masses, head-on, elastic, through CoM", "debris_mass_kg": 500.0,
+     "impact_angle_deg": 0.0, "coefficient_of_restitution": 1.0, "panel_impact_point_m": [0.0, 0.0]},
+    {"name": "equal masses, head-on, perfectly inelastic", "debris_mass_kg": 500.0,
+     "impact_angle_deg": 0.0, "coefficient_of_restitution": 0.0, "panel_impact_point_m": [0.0, 0.0]},
+    {"name": "debris much heavier than satellite (100x)", "debris_mass_kg": 50000.0,
+     "impact_angle_deg": 0.0, "coefficient_of_restitution": 1.0, "panel_impact_point_m": [0.0, 0.0]},
+    {"name": "near-grazing impact (89 deg)", "impact_angle_deg": 89.0},
+    {"name": "impact at the centre of mass (no spin)", "panel_impact_point_m": [0.0, 0.0]},
+    {"name": "perfectly elastic (e = 1)", "coefficient_of_restitution": 1.0},
+    {"name": "perfectly inelastic (e = 0)", "coefficient_of_restitution": 0.0}
+  ]
+}

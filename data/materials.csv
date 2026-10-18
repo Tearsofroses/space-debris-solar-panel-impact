@@ -1,0 +1,6 @@
+material,density_kg_m3,note
+aluminium,2700,most common debris material (spent stages and satellite structures)
+steel,7850,dense fragments (tanks and fasteners)
+titanium,4500,pressure vessels
+glass,2500,solar cell cover glass fragments
+paint,1500,paint flakes (very common small debris)

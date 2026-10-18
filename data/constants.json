@@ -1,0 +1,11 @@
+{
+  "_comment": "Physical constants and model thresholds. Edit here, never in the Python code.",
+  "earth_gravitational_parameter_m3_s2": 3.986004418e14,
+  "earth_radius_m": 6378137.0,
+  "catastrophic_emr_threshold_J_kg": 40000.0,
+  "_emr_source": "NASA Standard Breakup Model: impact energy-to-target-mass ratio above 40 J/g fragments the whole satellite.",
+  "aluminium_vaporization_specific_energy_J_kg": 1.3e7,
+  "_vaporization_source": "Approx. heat to melt + boil + vaporize aluminium starting at 300 K (~13 MJ/kg).",
+  "hypervelocity_threshold_m_s": 3000.0,
+  "_hypervelocity_source": "Above ~3 km/s impact pressures exceed material strength: projectile behaves like a fluid."
+}

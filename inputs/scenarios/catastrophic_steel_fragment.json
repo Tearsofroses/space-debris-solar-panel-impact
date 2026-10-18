@@ -1,0 +1,35 @@
+{
+  "system": "Space debris impact on a satellite solar panel",
+  "scenario": "catastrophic_steel_fragment",
+  "description": "Limit of applicability: 2 kg steel fragment at 12 km/s. EMR is far above 40 J/g, so the rigid-body model does not hold.",
+  "satellite": {
+    "mass_kg": 500.0,
+    "moment_of_inertia_kg_m2": 1200.0,
+    "panel_impact_point_m": [
+      4.0,
+      0.0
+    ],
+    "panel_normal_angle_deg": 90.0
+  },
+  "debris": {
+    "mass_kg": 2.0,
+    "material": "steel",
+    "relative_speed_m_s": 12000.0,
+    "impact_angle_deg": 10.0
+  },
+  "contact": {
+    "coefficient_of_restitution": 0.0,
+    "contact_duration_s": 1e-06
+  },
+  "orbit": {
+    "altitude_m": 550000.0,
+    "n_orbits": 3.0
+  },
+  "simulation": {
+    "method": "DOP853",
+    "rtol": 1e-10,
+    "impact_t_max_factor": 6.0,
+    "n_output_impact": 2000,
+    "n_output_orbit": 3000
+  }
+}

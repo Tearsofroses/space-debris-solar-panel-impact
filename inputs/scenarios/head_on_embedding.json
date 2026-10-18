@@ -1,0 +1,35 @@
+{
+  "system": "Space debris impact on a satellite solar panel",
+  "scenario": "head_on_embedding",
+  "description": "Perfectly inelastic (e = 0): the fragment hits along the normal and embeds in the panel.",
+  "satellite": {
+    "mass_kg": 500.0,
+    "moment_of_inertia_kg_m2": 1200.0,
+    "panel_impact_point_m": [
+      4.0,
+      0.0
+    ],
+    "panel_normal_angle_deg": 90.0
+  },
+  "debris": {
+    "mass_kg": 0.001,
+    "material": "aluminium",
+    "relative_speed_m_s": 10000.0,
+    "impact_angle_deg": 0.0
+  },
+  "contact": {
+    "coefficient_of_restitution": 0.0,
+    "contact_duration_s": 1e-06
+  },
+  "orbit": {
+    "altitude_m": 550000.0,
+    "n_orbits": 3.0
+  },
+  "simulation": {
+    "method": "DOP853",
+    "rtol": 1e-10,
+    "impact_t_max_factor": 6.0,
+    "n_output_impact": 2000,
+    "n_output_orbit": 3000
+  }
+}
