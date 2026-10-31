@@ -27,9 +27,9 @@ physical is hard-coded in the Python files.
 
 ```
 main.py            orchestration: load inputs -> solve -> write CSV -> plot
-physics_model.py   equations: impulse-momentum, effective mass, conservation checks
+physics_model.py   equations: impulse-momentum, torque, conservation checks
 solvers.py         one-scenario solution and parametric sweeps
-input_parser.py    reads JSON/CSV, rejects non-physical inputs (m <= 0, e not in [0,1], ...)
+input_parser.py    reads JSON/CSV, rejects non-physical inputs (m <= 0, unknown collision type, ...)
 plotting.py        all figures (matplotlib, 300 dpi)
 data/              constants.json (G*M_Earth, R_Earth), materials.csv (densities)
 inputs/            scenarios/*.json (one impact each), parametric_study.json
@@ -57,6 +57,13 @@ normal impulse *J* acts.
 | elastic: relative normal speed reverses | J = 2 v₀ cos θ / k |
 | completely inelastic: relative normal speed becomes 0 | J = v₀ cos θ / k |
 | energy lost | 0 (elastic), (v₀ cos θ)² / (2k) (inelastic) |
+
+Where k comes from: the first three rows say one unit of impulse changes the debris's normal
+speed by 1/m, the satellite's by 1/M, and the struck point's spin speed by (r × n)²/I (the
+lever arm enters once in the torque and once in v = ωr). Adding them gives k. For a hit through
+the CoM, (r × n) = 0 and 1/k = mM/(m + M), the two-body collision of the slides. Keeping the
+spin term is what makes the elastic case conserve kinetic energy exactly and makes the fragment
+really stick in the inelastic case (compare the slides' "bullet shot into a stick" problem).
 
 **2. Conservation checks** (`physics_model.conservation_check`). For each impact the code
 compares before and after:
