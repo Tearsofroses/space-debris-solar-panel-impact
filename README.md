@@ -5,31 +5,33 @@ General topic **14 – Conservation of Linear Momentum in Collisions**.
 
 A small debris fragment strikes a satellite's solar panel at orbital speed. This code works out
 how much momentum and angular momentum the hit gives the satellite, how much kinetic energy
-turns into heat and crater damage, and how the resulting Δv moves the satellite out of its
-orbital slot. Every result is checked against conservation laws and closed-form solutions.
+turns into heat and crater damage, and how big the resulting Δv is compared with the orbital
+speed. Every result is checked against the conservation laws.
+
+The model uses only lecture-slide material (Ch2-Ch3): impulse-momentum, conservation of linear
+and angular momentum, torque and moment of inertia, elastic / inelastic collisions, kinetic
+energy, gravity as centripetal force.
 
 ## Quick start
 
 ```bash
-# one-time: install uv (https://docs.astral.sh/uv/), then inside this folder
-uv sync                      # creates .venv with numpy, scipy, pandas, matplotlib
-
-uv run main.py               # all scenarios + parametric study  (~40 s)
+uv sync                      # creates .venv with numpy, pandas, matplotlib
+uv run main.py               # all scenarios + parametric study
 uv run main.py inputs/scenarios/baseline.json --no-parametric   # one scenario only
 ```
 
 To try a new case, copy a file in `inputs/scenarios/`, change the numbers and run it. Nothing
 physical is hard-coded in the Python files.
 
-## Project structure (as in the course guidelines)
+## Project structure
 
 ```
-main.py            orchestration: load inputs → solve → write CSV → plot
-physics_model.py   equations: impulse-momentum, contact force, CW orbit equations, energy/momentum
-solvers.py         scipy solve_ivp integrations, parametric sweeps, Monte Carlo, validation
-input_parser.py    reads JSON/CSV, rejects non-physical inputs (m ≤ 0, e ∉ [0,1], ...)
+main.py            orchestration: load inputs -> solve -> write CSV -> plot
+physics_model.py   equations: impulse-momentum, effective mass, conservation checks
+solvers.py         one-scenario solution and parametric sweeps
+input_parser.py    reads JSON/CSV, rejects non-physical inputs (m <= 0, e not in [0,1], ...)
 plotting.py        all figures (matplotlib, 300 dpi)
-data/              constants.json (μ_Earth, R_Earth, thresholds), materials.csv (densities)
+data/              constants.json (G*M_Earth, R_Earth), materials.csv (densities)
 inputs/            scenarios/*.json (one impact each), parametric_study.json
 outputs/           CSV tables (generated)
 visualizations/    PNG figures (generated)
@@ -37,103 +39,68 @@ visualizations/    PNG figures (generated)
 
 ## Physics model
 
-**Frame:** LVLH frame in the orbital plane. *x* is radial, *y* is along-track (direction of
-flight) and *z* is the orbit normal (spin axis). The satellite is a rigid body with mass *M* and
-moment of inertia *I*. The fragment hits the panel at lever arm **r** from the centre of mass.
-The panel's outward normal is **n**. The fragment is a point mass *m* arriving at speed *v₀*,
-at angle θ from the normal.
+**Frame:** 2-D, orbital plane. *x* is radial, *y* is along-track, *z* is the orbit normal (spin
+axis). The satellite is a rigid body of mass *M* and moment of inertia *I*, at rest before the
+hit. The fragment is a point mass *m* arriving at speed *v₀*, at angle θ from the panel normal
+**n**, at lever arm **r** from the centre of mass (CoM). Contact is frictionless, so only a
+normal impulse *J* acts.
 
-**1. Collision: impulse-momentum (analytic).** The contact is frictionless with coefficient of
-restitution *e*.
+**1. Collision.** Two cases from the slides: *elastic* (kinetic energy conserved) and
+*completely inelastic* (the fragment sticks to the panel).
 
 | quantity | formula |
 |---|---|
-| effective mass | 1/m_eff = 1/m + 1/M + (r × n)²/I |
-| normal impulse | J = (1 + e) m_eff v₀ cos θ |
-| satellite | ΔV = −J n / M,  Δω = (r × (−J n)) / I |
-| debris | Δv = +J n / m |
-| energy lost | E_diss = ½ m_eff (v₀ cos θ)² (1 − e²) |
-| momentum transfer efficiency | β = J / (m v₀ cos θ) = (1 + e) m_eff / m |
+| impulse-momentum, debris | m Δv = +J n |
+| impulse-momentum, satellite | M ΔV = −J n |
+| torque on satellite about CoM | I Δω = r × (−J n) |
+| change of relative normal speed per unit impulse | k = 1/m + 1/M + (r × n)²/I |
+| elastic: relative normal speed reverses | J = 2 v₀ cos θ / k |
+| completely inelastic: relative normal speed becomes 0 | J = v₀ cos θ / k |
+| energy lost | 0 (elastic), (v₀ cos θ)² / (2k) (inelastic) |
 
-The total linear momentum m**v** + M**V** is the same before and after the hit, for every *e*.
-The hit loses kinetic energy unless *e* = 1.
+**2. Conservation checks** (`physics_model.conservation_check`). For each impact the code
+compares before and after:
+- total linear momentum m**v** + M**V**
+- angular momentum about the CoM, m (**r** × **v**) + Iω
+- energy: K_debris + K_satellite (translation) + K_satellite (rotation) + E_diss = ½ m v₀²
 
-**2. Collision: time-resolved (numerical).** During contact the panel pushes back with a
-linear spring-dashpot force f = kδ + c dδ/dt, where δ is the penetration depth. This lets
-`solve_ivp` (method **DOP853**, rtol = 1e‑10) follow the hit microsecond by microsecond.
-- k = m_eff (π/t_c)² sets the contact time t_c (1 µs by default).
-- The damping ratio ζ = −ln e / √(π² + ln² e) makes the rebound reproduce the target *e*.
-- e = 0 gives critical damping, so the fragment stays embedded.
-- An event function detects separation (δ → 0).
+The residuals are at round-off level (~1e-16).
 
-At every time step the code tracks:
-- total linear momentum **P**
-- angular momentum L_z
-- total energy K + U_spring + E_dissipated
+**3. Orbit.** Gravity acts as the centripetal force, G M m / r² = m v²/r, so the circular
+orbital speed is v = √(GM/r). The code reports ΔV / v_orbit to show how small the kick is.
 
-All three stay constant to about 1e‑15 (see `05_momentum_conservation.png` and
-`04_energy_error.png`).
+## Assumptions and limitations
 
-**3. After the hit: orbital drift.** The Δv feeds the Clohessy–Wiltshire (Hill) equations
-ẍ = 3n²x + 2nẏ, ÿ = −2nẋ, integrated with `solve_ivp` and checked against their exact solution.
-Their conserved Jacobi integral ½(ẋ² + ẏ²) − (3/2)n²x² serves as the energy check. The code also
-reports the change in semi-major axis (vis-viva) and the along-track drift per orbit.
-
-**4. Limits of applicability.** Each run reports the impact energy-to-mass ratio
-EMR = ½mv₀²/M. Above **40 J/g** (NASA Standard Breakup Model) the satellite breaks apart, so a
-rigid-body momentum result has no physical meaning. The run flags this (see the
-`catastrophic_steel_fragment` scenario and the orange line in `01_mass_speed_dv_map.png`).
+- **Instantaneous collision.** External forces (gravity) are negligible during the very short
+  contact, so momentum is conserved. The time-resolved contact is not modelled.
+- **2-D, frictionless contact.** Tangential friction impulse is neglected.
+- **Rigid satellite, point-mass fragment, two ideal collision types.** A real hypervelocity
+  fragment melts or vaporises and falls between the elastic and completely inelastic limits.
+- **Orbit.** Only the size of ΔV relative to the orbital speed is reported. Orbit
+  perturbation theory is outside the course scope and is not modelled.
 
 ## Scenarios (`inputs/scenarios/`)
 
 | file | case |
 |---|---|
-| `baseline.json` | 1 g Al fragment, 10 km/s, 30°, e = 0.3, 500 kg satellite, hit 4 m from CoM |
-| `head_on_embedding.json` | normal hit, perfectly inelastic (e = 0) |
-| `grazing_elastic.json` | 80° grazing hit, perfectly elastic (e = 1) |
-| `catastrophic_steel_fragment.json` | 2 kg steel at 12 km/s: beyond the model's validity |
+| `baseline.json` | 1 g Al fragment, 10 km/s, 30°, completely inelastic, 500 kg satellite, hit 4 m from CoM |
+| `head_on_embedding.json` | normal hit, completely inelastic |
+| `grazing_elastic.json` | 80° grazing hit, elastic |
 
 `inputs/parametric_study.json` drives:
 - a debris mass × speed map
-- impact-angle, restitution and mass-ratio sweeps (the textbook 1-D collision; m/M from 10⁻⁶ to 100)
-- a 20 000-impact Monte Carlo with fixed seed 42, so it is reproducible
-- the extreme cases: equal masses, m ≫ M, grazing, hit at the CoM, e = 0 / 1
+- impact-angle and mass-ratio sweeps, each for elastic and completely inelastic (the textbook 1-D collision; m/M from 10⁻⁶ to 100)
+- the extreme cases: equal masses, m ≫ M, grazing, hit at the CoM, elastic vs completely inelastic
 
 ## Outputs
 
 For each scenario, in `outputs/<scenario>/`:
-- `simulation_results.csv`: impact time series. It uses the guideline schema (`time_t`,
-  `pos_*`, `vel_*`, `kinetic_energy`, `potential_energy`, `total_energy`; primary body is the
-  satellite) plus debris state, contact force, momenta and error columns.
-- `post_impact_orbit.csv`: CW drift, numerical vs analytic
-- `summary.csv`: key results (Δv, spin, energy lost, Δa, EMR, maximum conservation errors)
-- `validation.csv`: numerical vs analytic
+- `summary.csv`: Δv, spin, energy lost, β, ΔV / v_orbit, conservation residuals
+- `conservation.csv`: before / after values of P, L and the energy balance
 
-`outputs/` also holds the combined tables `scenario_summary.csv` and `validation.csv`, and the
+`outputs/` also holds the combined `scenario_summary.csv` and `conservation.csv`, and the
 parametric tables in `outputs/parametric/`.
 
-Figures for each scenario are in `visualizations/<scenario>/`:
-1. trajectory
-2. time series
-3. phase space
-4. energy and error
-5. momentum conservation
-
-The parametric figures are in `visualizations/parametric/`.
-
-## Assumptions and known limitations (useful for the Q&A)
-
-- **2-D, frictionless contact.** Only the normal impulse is transferred. Any tangential
-  friction impulse is neglected.
-- **Rigid satellite, point-mass fragment.** In reality a hypervelocity fragment (> 3 km/s)
-  melts or vaporises and throws out crater ejecta, which can push β above 2. Here *e* is an
-  effective parameter that lumps that behaviour together. The fragment is also assumed to stop
-  in the panel or bounce off it, not to perforate it.
-- **Spring-dashpot artifact.** The linear spring-dashpot pulls slightly at the very end of
-  contact (the negative force just before separation in `02_time_series.png`). This is the
-  known artifact of that model. It is kept because it reproduces *e* exactly.
-- **Numerical vs analytic spin rate.** The two differ by about 10⁻⁴ to 10⁻³. This is real
-  physics, not numerical error: the fragment slides a few mm along the panel during the 1 µs
-  contact, which changes the lever arm.
-- **Orbit model.** CW equations assume a circular reference orbit and small offsets. No drag,
-  J2 or attitude control is modelled.
+Figures: `visualizations/<scenario>/01_momentum_energy_budget.png` for each scenario, and the
+parametric figures in `visualizations/parametric/` (ΔV map, angle sweep,
+mass-ratio sweep, conservation residuals).

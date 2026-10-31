@@ -1,0 +1,4 @@
+scenario,quantity,before,after,rel_error
+head_on_embedding,linear momentum |P| (kg m/s),10.0,10.0,0.0
+head_on_embedding,angular momentum L_z about CoM (kg m^2/s),-40.0,-40.0,0.0
+head_on_embedding,kinetic energy + dissipated (J),50000.0,50000.0,0.0

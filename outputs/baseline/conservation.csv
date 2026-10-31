@@ -1,0 +1,4 @@
+scenario,quantity,before,after,rel_error
+baseline,linear momentum |P| (kg m/s),10.0,9.999999999999998,1.7763568394002506e-16
+baseline,angular momentum L_z about CoM (kg m^2/s),-34.64101615137755,-34.64101615137754,1.7763568394002506e-16
+baseline,kinetic energy + dissipated (J),50000.0,50000.00000000001,1.4551915228366853e-16
