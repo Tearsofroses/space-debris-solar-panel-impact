@@ -14,7 +14,7 @@
     "n_angle": 179,
     "collision_types": [
       "elastic",
-      "inelastic"
+      "completely_inelastic"
     ]
   },
   "mass_ratio_sweep": {
@@ -23,7 +23,7 @@
     "n_points": 241,
     "collision_types": [
       "elastic",
-      "inelastic"
+      "completely_inelastic"
     ]
   },
   "extreme_cases": [
@@ -49,7 +49,7 @@
         0.0,
         0.0
       ],
-      "collision_type": "inelastic"
+      "collision_type": "completely_inelastic"
     },
     {
       "name": "debris much heavier than satellite (100x)",
@@ -78,7 +78,7 @@
     },
     {
       "name": "completely inelastic",
-      "collision_type": "inelastic"
+      "collision_type": "completely_inelastic"
     }
   ]
 }

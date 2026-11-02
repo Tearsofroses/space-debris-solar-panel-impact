@@ -53,19 +53,21 @@ def plot_budget(summary, s, out):
     m, M = s.debris_mass, s.sat_mass
 
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.8))
-    # (a) linear momentum component along the panel normal
-    labels = ["Debris", "Satellite", "Total"]
-    p_debris0, p_debris1, p_sat1 = m * np.dot(vd0, n), m * np.dot(vd1, n), M * np.dot(dV, n)
-    before = [p_debris0, 0.0, p_debris0]
-    after = [p_debris1, p_sat1, p_debris1 + p_sat1]
-    x = np.arange(3)
+    # (a) linear momentum, projected on the panel normal n and the panel tangent t
+    labels, before, after = [], [], []
+    for axis, e in (("n", n), ("t", pm.z_cross(n))):
+        p_debris0, p_debris1, p_sat1 = m * np.dot(vd0, e), m * np.dot(vd1, e), M * np.dot(dV, e)
+        labels += [f"Debris ({axis})", f"Satellite ({axis})", f"Total ({axis})"]
+        before += [p_debris0, 0.0, p_debris0]
+        after += [p_debris1, p_sat1, p_debris1 + p_sat1]
+    x = np.arange(len(labels))
     a1.bar(x - 0.2, before, 0.4, color=C1, label="Before impact")
     a1.bar(x + 0.2, after, 0.4, color=C2, label="After impact")
     a1.axhline(0, color=INK2, lw=0.8)
     a1.set_xticks(x)
-    a1.set_xticklabels(labels)
-    a1.set_ylabel("Momentum along panel normal p·n (kg m/s)")
-    a1.set_title("Linear momentum: total is conserved")
+    a1.set_xticklabels(labels, fontsize=7)
+    a1.set_ylabel("Momentum component p·n, p·t (kg m/s)")
+    a1.set_title("Linear momentum: each total component is conserved")
     a1.legend()
     # (b) energy budget
     parts = [("Debris K after", summary["ke_debris_after_J"]),

@@ -19,7 +19,6 @@ dissipated_fraction,0.0
 ke_debris_after_J,49999.90753152092
 ke_sat_translation_J,0.01206110596606634
 ke_sat_rotation_J,0.08040737310710894
-momentum_transfer_beta,1.9999693338035485
 orbital_speed_m_s,7585.088535158763
 sat_dv_over_orbital_speed,9.157204391087886e-07
 momentum_rel_error,0.0

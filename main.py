@@ -39,8 +39,7 @@ def run_scenario(path, constants, materials):
     print(f"    debris: {s.debris_mass:g} kg {s.debris_material} "
           f"(d = {summary['debris_diameter_mm']:.2f} mm), {s.speed / 1e3:g} km/s, "
           f"{s.impact_angle_deg:g} deg, {s.collision_type}")
-    print(f"    impulse J = {summary['impulse_Ns']:.4g} N s, "
-          f"beta = {summary['momentum_transfer_beta']:.4g}")
+    print(f"    impulse on satellite |J| = {summary['impulse_Ns']:.4g} N s")
     print(f"    satellite dV = {summary['sat_dv_mag_m_s'] * 1e3:.4g} mm/s "
           f"({summary['sat_dv_over_orbital_speed']:.2e} of orbital speed), "
           f"spin = {np.degrees(summary['sat_omega_rad_s']):.4g} deg/s")
@@ -71,6 +70,9 @@ def run_parametric(path, materials):
         df = solve(base, cfg[key])
         df.to_csv(out / f"{key}.csv", index=False)
         plot(df, vis / png)
+        if "slide_formula_error" in df:
+            print(f"    1-D collision vs slide formulas: max |error| / v0 = "
+                  f"{df['slide_formula_error'].max():.1e}")
 
     ext = solvers.extreme_cases(base, cfg["extreme_cases"])
     ext.to_csv(out / "extreme_cases.csv", index=False)

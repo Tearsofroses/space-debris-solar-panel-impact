@@ -107,11 +107,20 @@ def mass_ratio_sweep(s, cfg):
     for kind in cfg["collision_types"]:
         r = analytic_for(s, m=ratio * s.sat_mass, angle=0.0, collision=kind, arm=np.zeros(2))
         debris_v = (r["debris_vx_after_m_s"], r["debris_vy_after_m_s"])
+        sat_v = r["sat_dv_mag_m_s"] / s.speed
+        debris_v = -pm.dot(debris_v, n) / s.speed
+        # 1-D collision formulas of the slides (m1 = m moving at v0, m2 = M at rest)
+        if kind == "elastic":
+            slide_debris, slide_sat = (ratio - 1) / (ratio + 1), 2 * ratio / (ratio + 1)
+        else:
+            slide_debris = slide_sat = ratio / (ratio + 1)
         frames.append(pd.DataFrame({
             "mass_ratio_m_over_M": ratio, "collision_type": kind,
-            "sat_dv_over_v0": r["sat_dv_mag_m_s"] / s.speed,
-            "debris_v_after_over_v0": -pm.dot(debris_v, n) / s.speed,
+            "sat_dv_over_v0": sat_v,
+            "debris_v_after_over_v0": debris_v,
             "dissipated_fraction": r["dissipated_fraction"],
+            "slide_formula_error": np.maximum(abs(sat_v - slide_sat),
+                                              abs(debris_v - slide_debris)),
         }))
     return pd.concat(frames, ignore_index=True)
 
@@ -131,7 +140,6 @@ def extreme_cases(base, cases):
             "debris_v_after_m_s": float(np.hypot(ref["debris_vx_after_m_s"],
                                                  ref["debris_vy_after_m_s"])),
             "dissipated_fraction": ref["dissipated_fraction"],
-            "momentum_transfer_beta": ref["momentum_transfer_beta"],
             "momentum_rel_error": cons["momentum_rel_error"],
             "angular_momentum_rel_error": cons["angular_momentum_rel_error"],
             "energy_rel_error": cons["energy_rel_error"],

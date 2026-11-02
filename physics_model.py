@@ -1,40 +1,46 @@
 """Physical model: a debris fragment hits a satellite's solar panel.
 
 Only concepts from the lecture slides (Ch2-Ch3) are used:
+    - centre of mass, P = M v_CM                                  (Ch3, 1.1, 1.3)
     - impulse-momentum theorem, conservation of linear momentum   (Ch3, 1.3)
-    - elastic and completely inelastic collisions                 (Ch3, 1.4)
-    - torque, moment of inertia, L = I w, conservation of L       (Ch3, 2.3-2.6)
-    - kinetic energy of translation and rotation                  (Ch3, 2.6)
-    - gravitational force and centripetal force (circular orbit)  (Ch2, 2.1, 2.3)
+    - elastic and completely inelastic collisions, 1-D and 2-D    (Ch3, 1.4)
+    - torque, moment of inertia, parallel-axis theorem            (Ch3, 2.3-2.4)
+    - L = r x p (particle), L = I w (rigid body), conservation    (Ch3, 2.6.2)
+    - kinetic energy K = 1/2 M v_CM^2 + 1/2 I_CM w^2              (Ch3, 2.5-2.7)
+    - gravitational force as the centripetal force (circular orbit) (Ch2, 2.1, 2.3)
 
 Frame (2-D, orbital plane): x = radial, y = along-track, z = orbit normal (spin axis).
 
 Bodies
     debris    : point mass m, velocity v_d (relative to the satellite before impact)
-    satellite : rigid body of mass M and moment of inertia I about z, initially at rest.
-                The impact point on the panel is at arm r from the centre of mass (CoM),
-                and the panel surface has outward unit normal n.
+    satellite : rigid body of mass M and moment of inertia I about z through its CoM,
+                initially at rest, CoM at the origin. The impact point on the panel is at
+                arm r from the CoM, and the panel surface has outward unit normal n.
 
-Collision (frictionless contact: only a normal impulse J along n)
+The collision is instantaneous, so gravity does not act during it: the total linear
+momentum and the total angular momentum (about the satellite CoM) are both conserved.
+
+Elastic (kinetic energy conserved; frictionless contact, so only a normal impulse J n)
     Impulse-momentum theorem for each body, with the satellite also rotating:
         debris    : m  dv_d   = +J n
         satellite : M  dV     = -J n
                     I  domega = r x (-J n)            (torque about the CoM)
-    Along n, the approach speed of the debris relative to the struck point is v_n and,
-    after the impulse, it has changed by  J k,  where
-        k = 1/m + 1/M + (r x n)^2 / I .
-    Two cases, as in the slides:
-        elastic              : kinetic energy is conserved -> the relative normal speed
-                               reverses, J k = 2 v_n.
-        completely inelastic : the fragment sticks to the panel -> the relative normal
-                               speed becomes zero, J k = v_n.
-    Hence  J = f v_n / k  with f = 2 (elastic) or f = 1 (completely inelastic).
-    The energy lost is  0 (elastic)  or  v_n^2 / (2k)  (completely inelastic).
+    One unit of impulse changes the relative normal speed of the debris and the struck
+    point by  k = 1/m + 1/M + (r x n)^2 / I.  Kinetic energy is conserved when the relative
+    normal speed reverses (as in the 1-D elastic collision), so  J = 2 v_n / k.
+
+Completely inelastic (the fragment sticks to the panel: one rigid body afterwards)
+    Same method as the slides' "collision of extended bodies in 2-D":
+        centre of mass      r_c  = m r / (m + M)
+        linear momentum     m v_d = (m + M) v_CM
+        moment of inertia   I_c  = I + M |r_c|^2 + m |r - r_c|^2     (parallel-axis theorem)
+        angular momentum    m (r - r_c) x v_d = I_c w                (about the new CoM)
+    Energy lost  = 1/2 m v_d^2 - 1/2 (m + M) v_CM^2 - 1/2 I_c w^2.
 """
 
 import numpy as np
 
-COLLISION_FACTORS = {"elastic": 2.0, "inelastic": 1.0}
+COLLISION_TYPES = ("elastic", "completely_inelastic")
 
 
 # ----------------------------------------------------------------------------
@@ -50,69 +56,89 @@ def cross_z(a, b):
     return a[0] * b[1] - a[1] * b[0]
 
 
-def tangent_of(n):
-    """Unit tangent of the panel surface: t = z_hat x n."""
-    return np.array([-n[1], n[0]])
+def z_cross(a):
+    """z_hat x a: the direction of w x a for a spin w about z (v = w x r)."""
+    return np.array([-a[1], a[0]])
 
 
 # ----------------------------------------------------------------------------
-# Collision mechanics (impulse-momentum solution)
+# Collision mechanics
 # ----------------------------------------------------------------------------
-def normal_compliance(m, M, I, rxn):
-    """k = 1/m + 1/M + (r x n)^2 / I: change of relative normal speed per unit impulse."""
-    return 1.0 / m + 1.0 / M + rxn ** 2 / I
-
-
 def debris_velocity(speed, impact_angle, n):
     """Debris velocity for a hit at `impact_angle` from the panel normal (moving into the panel)."""
-    t = tangent_of(n)
+    t = z_cross(n)
     cos_a, sin_a = np.cos(impact_angle), np.sin(impact_angle)
     return -speed * (np.multiply.outer(n, cos_a) + np.multiply.outer(t, sin_a))
+
+
+
+
+def _elastic(m, M, I, arm, n, vd0, v_n):
+    """Frictionless elastic collision: normal impulse J = 2 v_n / k.
+
+    Returns (dV, w, vd1, energy lost = 0).
+    """
+    rxn = cross_z(arm, n)                        # lever arm of the impulse, r x n
+    k = 1.0 / m + 1.0 / M + rxn ** 2 / I
+    J = 2.0 * v_n / k
+    Jn = np.multiply.outer(n, J)                 # impulse on the debris, J n
+    return -Jn / M, -J * rxn / I, vd0 + Jn / m, np.zeros_like(J)
+
+
+def _completely_inelastic(m, M, I, arm, vd0):
+    """Fragment sticks: P and L conserved for the combined rigid body.
+
+    `arm` has shape (2, 1, ...) so that it broadcasts against the arrays m and vd0.
+    Returns (dV, w, vd1, energy lost).
+    """
+    r_c = arm * m / (m + M)                      # new CoM, measured from the satellite CoM
+    r_sat, r_deb = -r_c, arm - r_c               # positions from the new CoM
+    v_cm = m * vd0 / (m + M)
+    I_c = I + M * dot(r_sat, r_sat) + m * dot(r_deb, r_deb)
+    w = m * cross_z(r_deb, vd0) / I_c
+    k_after = 0.5 * (m + M) * dot(v_cm, v_cm) + 0.5 * I_c * w ** 2
+    e_diss = 0.5 * m * dot(vd0, vd0) - k_after
+    # every point of the combined body moves with v = v_CM + w x (position from the new CoM)
+    return v_cm + w * z_cross(r_sat), w, v_cm + w * z_cross(r_deb), e_diss
 
 
 def analytic_collision(m, M, I, arm, n, speed, impact_angle, collision):
     """Closed-form post-impact state. m, speed and impact_angle may be numpy arrays.
 
-    `collision` is "elastic" or "inelastic" (completely inelastic).
+    `collision` is "elastic" or "completely_inelastic".
     Satellite is at rest before the impact (velocities are relative to it).
     """
-    if collision not in COLLISION_FACTORS:
-        raise ValueError(f"collision must be one of {sorted(COLLISION_FACTORS)} "
+    if collision not in COLLISION_TYPES:
+        raise ValueError(f"collision must be one of {list(COLLISION_TYPES)} "
                          f"(got {collision!r})")
     m, speed, impact_angle = np.broadcast_arrays(*(np.asarray(x, dtype=float)
                                                    for x in (m, speed, impact_angle)))
-    f = COLLISION_FACTORS[collision]
-    rxn = cross_z(arm, n)                        # lever arm of the impulse, r x n
-    k = normal_compliance(m, M, I, rxn)
-    v_n = speed * np.cos(impact_angle)           # normal approach speed
-    J = f * v_n / k                              # normal impulse magnitude, N s
-
-    Jn = np.multiply.outer(n, J)                 # impulse vector J n
-    dv_sat = -Jn / M
-    d_omega = -J * rxn / I
+    arm = np.asarray(arm, dtype=float)
     vd0 = debris_velocity(speed, impact_angle, n)
-    vd1 = vd0 + Jn / m
+    if collision == "elastic":
+        v_n = speed * np.cos(impact_angle)       # normal approach speed
+        dV, w, vd1, e_diss = _elastic(m, M, I, arm, n, vd0, v_n)
+    else:
+        arm_b = arm.reshape((2,) + (1,) * m.ndim)
+        dV, w, vd1, e_diss = _completely_inelastic(m, M, I, arm_b, vd0)
 
     ke0 = 0.5 * m * speed ** 2
-    # energy lost = J v_n - J^2 k / 2 = f (2 - f) / 2 * v_n^2 / k: 0 elastic, v_n^2/(2k) inelastic
-    e_diss = 0.5 * f * (2.0 - f) * v_n ** 2 / k
-    dv_mag = np.hypot(*dv_sat)
+    dv_mag = np.hypot(*dV)
     return {
-        "impulse_Ns": J,
-        "sat_dv_x_m_s": dv_sat[0],
-        "sat_dv_y_m_s": dv_sat[1],
+        "impulse_Ns": M * dv_mag,                # |impulse on the satellite| = M |dV|
+        "sat_dv_x_m_s": dV[0],
+        "sat_dv_y_m_s": dV[1],
         "sat_dv_mag_m_s": dv_mag,
-        "sat_omega_rad_s": d_omega,
+        "sat_omega_rad_s": w,
         "debris_vx_after_m_s": vd1[0],
         "debris_vy_after_m_s": vd1[1],
         "impact_energy_J": ke0,
+        # kinetic energy turned into heat, crater damage, sound (0 if elastic)
         "dissipated_energy_J": e_diss,
         "dissipated_fraction": np.divide(e_diss, ke0, out=np.zeros_like(ke0), where=ke0 > 0),
         "ke_debris_after_J": 0.5 * m * dot(vd1, vd1),
         "ke_sat_translation_J": 0.5 * M * dv_mag ** 2,
-        "ke_sat_rotation_J": 0.5 * I * d_omega ** 2,
-        # momentum transfer ratio: impulse given / normal momentum carried in
-        "momentum_transfer_beta": J / (m * v_n),
+        "ke_sat_rotation_J": 0.5 * I * w ** 2,
     }
 
 

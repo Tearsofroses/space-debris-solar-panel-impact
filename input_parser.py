@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from physics_model import COLLISION_FACTORS
+from physics_model import COLLISION_TYPES
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
@@ -40,7 +40,7 @@ class Scenario:
     speed: float                 # relative impact speed v0, m/s
     impact_angle_deg: float      # angle between debris path and the panel normal
     # collision
-    collision_type: str          # "elastic" or "inelastic" (completely inelastic)
+    collision_type: str          # "elastic" or "completely_inelastic"
     # orbit (only used to compare dV with the orbital speed)
     altitude: float              # m
 
@@ -105,8 +105,8 @@ def validate(s):
                          ("debris mass", s.debris_mass), ("impact speed", s.speed),
                          ("altitude", s.altitude)]:
         _positive(value, label)
-    if s.collision_type not in COLLISION_FACTORS:
-        raise ValueError(f"collision_type must be one of {sorted(COLLISION_FACTORS)} "
+    if s.collision_type not in COLLISION_TYPES:
+        raise ValueError(f"collision_type must be one of {list(COLLISION_TYPES)} "
                          f"(got {s.collision_type!r})")
     if not 0.0 <= s.impact_angle_deg < 90.0:
         raise ValueError(f"Impact angle must be in [0, 90) deg so the fragment actually "

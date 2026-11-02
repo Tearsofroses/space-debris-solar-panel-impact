@@ -18,7 +18,7 @@
     "impact_angle_deg": 0.0
   },
   "contact": {
-    "collision_type": "inelastic"
+    "collision_type": "completely_inelastic"
   },
   "orbit": {
     "altitude_m": 550000.0
