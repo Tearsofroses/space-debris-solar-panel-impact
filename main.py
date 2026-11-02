@@ -34,7 +34,7 @@ def run_scenario(path, constants, materials):
     out.mkdir(parents=True, exist_ok=True)
     pd.Series(summary, name="value").to_csv(out / "summary.csv", index_label="quantity")
     conservation.to_csv(out / "conservation.csv", index=False)
-    plotting.scenario_figures(summary, s, VISUALS / s.name)
+    plotting.plot_budget(summary, s, VISUALS / s.name / "01_momentum_energy_budget.png")
 
     print(f"    debris: {s.debris_mass:g} kg {s.debris_material} "
           f"(d = {summary['debris_diameter_mm']:.2f} mm), {s.speed / 1e3:g} km/s, "
@@ -110,14 +110,14 @@ def main(argv=None):
     OUTPUTS.mkdir(exist_ok=True)
     if summaries:
         pd.DataFrame(summaries).to_csv(OUTPUTS / "scenario_summary.csv", index=False)
-        conservation = pd.concat(conservations, ignore_index=True)
-        conservation.to_csv(OUTPUTS / "conservation.csv", index=False)
+        all_conservation = pd.concat(conservations, ignore_index=True)
+        all_conservation.to_csv(OUTPUTS / "conservation.csv", index=False)
+        if not args.no_parametric:
+            plotting.plot_conservation(all_conservation,
+                                       VISUALS / "parametric" / "04_conservation.png")
 
     if not args.no_parametric:
         run_parametric(args.parametric, materials)
-        if summaries:
-            plotting.plot_conservation(conservation,
-                                       VISUALS / "parametric" / "04_conservation.png")
 
     print(f"\nDone. Tables in {OUTPUTS.relative_to(PROJECT_ROOT)}/, "
           f"figures in {VISUALS.relative_to(PROJECT_ROOT)}/")

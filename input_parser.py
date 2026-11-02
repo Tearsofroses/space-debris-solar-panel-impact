@@ -12,7 +12,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-COLLISION_TYPES = {"elastic", "inelastic"}
+from physics_model import COLLISION_FACTORS
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
 
@@ -83,10 +84,11 @@ def _positive(value, label):
 
 
 def load_constants(path=DATA_DIR / "constants.json"):
-    raw = _read_json(path)
+    raw, where = _read_json(path), str(path)
     return Constants(
-        mu_earth=_positive(raw["earth_gravitational_parameter_m3_s2"], "mu_earth"),
-        earth_radius=_positive(raw["earth_radius_m"], "earth_radius"),
+        mu_earth=_positive(_require(raw, "earth_gravitational_parameter_m3_s2", where),
+                           "mu_earth"),
+        earth_radius=_positive(_require(raw, "earth_radius_m", where), "earth_radius"),
     )
 
 
@@ -103,8 +105,8 @@ def validate(s):
                          ("debris mass", s.debris_mass), ("impact speed", s.speed),
                          ("altitude", s.altitude)]:
         _positive(value, label)
-    if s.collision_type not in COLLISION_TYPES:
-        raise ValueError(f"collision_type must be one of {sorted(COLLISION_TYPES)} "
+    if s.collision_type not in COLLISION_FACTORS:
+        raise ValueError(f"collision_type must be one of {sorted(COLLISION_FACTORS)} "
                          f"(got {s.collision_type!r})")
     if not 0.0 <= s.impact_angle_deg < 90.0:
         raise ValueError(f"Impact angle must be in [0, 90) deg so the fragment actually "
@@ -145,14 +147,19 @@ def load_scenario(path, materials):
     return validate(s)
 
 
-# Keys allowed in an "extreme_cases" override, mapped to Scenario fields.
+def _vector(value):
+    return np.asarray(value, dtype=float)
+
+
+# Keys allowed in an "extreme_cases" override -> (Scenario field, type conversion).
 _OVERRIDE_FIELDS = {
-    "debris_mass_kg": "debris_mass",
-    "relative_speed_m_s": "speed",
-    "impact_angle_deg": "impact_angle_deg",
-    "collision_type": "collision_type",
-    "panel_impact_point_m": "panel_point",
-    "satellite_mass_kg": "sat_mass",
+    "name": ("name", str),
+    "debris_mass_kg": ("debris_mass", float),
+    "relative_speed_m_s": ("speed", float),
+    "impact_angle_deg": ("impact_angle_deg", float),
+    "collision_type": ("collision_type", str),
+    "panel_impact_point_m": ("panel_point", _vector),
+    "satellite_mass_kg": ("sat_mass", float),
 }
 
 
@@ -160,14 +167,10 @@ def override_scenario(base, overrides):
     """Return a validated copy of `base` with some fields changed."""
     changes = {}
     for key, value in overrides.items():
-        if key == "name":
-            changes["name"] = value
-        elif key in _OVERRIDE_FIELDS:
-            field = _OVERRIDE_FIELDS[key]
-            changes[field] = (np.asarray(value, dtype=float) if field == "panel_point"
-                              else value if field == "collision_type" else float(value))
-        else:
+        if key not in _OVERRIDE_FIELDS:
             raise KeyError(f"Unknown override key '{key}'. Allowed: {sorted(_OVERRIDE_FIELDS)}")
+        field, convert = _OVERRIDE_FIELDS[key]
+        changes[field] = convert(value)
     return validate(replace(base, **changes))
 
 

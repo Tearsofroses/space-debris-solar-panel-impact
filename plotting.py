@@ -55,8 +55,9 @@ def plot_budget(summary, s, out):
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4.8))
     # (a) linear momentum component along the panel normal
     labels = ["Debris", "Satellite", "Total"]
-    before = [m * np.dot(vd0, n), 0.0, m * np.dot(vd0, n)]
-    after = [m * np.dot(vd1, n), M * np.dot(dV, n), m * np.dot(vd1, n) + M * np.dot(dV, n)]
+    p_debris0, p_debris1, p_sat1 = m * np.dot(vd0, n), m * np.dot(vd1, n), M * np.dot(dV, n)
+    before = [p_debris0, 0.0, p_debris0]
+    after = [p_debris1, p_sat1, p_debris1 + p_sat1]
     x = np.arange(3)
     a1.bar(x - 0.2, before, 0.4, color=C1, label="Before impact")
     a1.bar(x + 0.2, after, 0.4, color=C2, label="After impact")
@@ -82,10 +83,6 @@ def plot_budget(summary, s, out):
     a2.legend(fontsize=7, loc="upper center", ncol=2)
     fig.suptitle(f"Momentum and energy budget - {s.name}", fontweight="bold")
     return _save(fig, out)
-
-
-def scenario_figures(summary, s, folder):
-    return [plot_budget(summary, s, Path(folder) / "01_momentum_energy_budget.png")]
 
 
 # ----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 {
-  "_comment": "Physical constants and model thresholds. Edit here, never in the Python code.",
+  "_comment": "Physical constants. Edit here, never in the Python code.",
   "earth_gravitational_parameter_m3_s2": 398600441800000.0,
   "earth_radius_m": 6378137.0
 }

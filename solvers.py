@@ -21,9 +21,15 @@ def analytic_for(s, m=None, speed=None, angle=None, collision=None, arm=None):
         s.collision_type if collision is None else collision)
 
 
-def conservation_for(s):
-    return pm.conservation_check(s.debris_mass, s.sat_mass, s.sat_inertia, s.panel_point,
-                                 s.panel_normal, s.speed, s.impact_angle, s.collision_type)
+def scalar_solution(s):
+    """analytic_for(s) as plain floats (one scenario, no sweep)."""
+    return {k: float(v) for k, v in analytic_for(s).items()}
+
+
+def conservation_for(s, r):
+    """Conservation residuals of the solution `r` of scenario `s`."""
+    return pm.conservation_check(r, s.debris_mass, s.sat_mass, s.sat_inertia, s.panel_point,
+                                 s.panel_normal, s.speed, s.impact_angle)
 
 
 # ----------------------------------------------------------------------------
@@ -31,8 +37,8 @@ def conservation_for(s):
 # ----------------------------------------------------------------------------
 def solve_impact(s, constants):
     """Returns (summary dict, conservation DataFrame row)."""
-    r = {k: float(v) for k, v in analytic_for(s).items()}
-    cons = conservation_for(s)
+    r = scalar_solution(s)
+    cons = conservation_for(s, r)
     v_orb = float(pm.orbital_speed(constants.mu_earth, constants.earth_radius + s.altitude))
     summary = {
         "scenario": s.name,
@@ -48,8 +54,6 @@ def solve_impact(s, constants):
         **{k: cons[k] for k in ("momentum_rel_error", "angular_momentum_rel_error",
                                 "energy_rel_error")},
     }
-    ke_after = (r["ke_debris_after_J"] + r["ke_sat_translation_J"]
-                + r["ke_sat_rotation_J"] + r["dissipated_energy_J"])
     conservation = pd.DataFrame([
         {"scenario": s.name, "quantity": "linear momentum |P| (kg m/s)",
          "before": cons["momentum_before_kg_m_s"], "after": cons["momentum_after_kg_m_s"],
@@ -58,7 +62,7 @@ def solve_impact(s, constants):
          "before": cons["angular_momentum_before"], "after": cons["angular_momentum_after"],
          "rel_error": cons["angular_momentum_rel_error"]},
         {"scenario": s.name, "quantity": "kinetic energy + dissipated (J)",
-         "before": r["impact_energy_J"], "after": ke_after,
+         "before": cons["energy_before_J"], "after": cons["energy_after_J"],
          "rel_error": cons["energy_rel_error"]},
     ])
     return summary, conservation
@@ -116,18 +120,18 @@ def extreme_cases(base, cases):
     rows = []
     for case in cases:
         s = override_scenario(base, case)
-        ref = analytic_for(s)
-        cons = conservation_for(s)
+        ref = scalar_solution(s)
+        cons = conservation_for(s, ref)
         rows.append({
             "case": case["name"], "debris_mass_kg": s.debris_mass,
             "impact_angle_deg": s.impact_angle_deg, "collision_type": s.collision_type,
             "panel_arm_m": float(np.linalg.norm(s.panel_point)),
-            "sat_dv_m_s": float(ref["sat_dv_mag_m_s"]),
-            "sat_omega_rad_s": float(ref["sat_omega_rad_s"]),
+            "sat_dv_m_s": ref["sat_dv_mag_m_s"],
+            "sat_omega_rad_s": ref["sat_omega_rad_s"],
             "debris_v_after_m_s": float(np.hypot(ref["debris_vx_after_m_s"],
                                                  ref["debris_vy_after_m_s"])),
-            "dissipated_fraction": float(ref["dissipated_fraction"]),
-            "momentum_transfer_beta": float(ref["momentum_transfer_beta"]),
+            "dissipated_fraction": ref["dissipated_fraction"],
+            "momentum_transfer_beta": ref["momentum_transfer_beta"],
             "momentum_rel_error": cons["momentum_rel_error"],
             "angular_momentum_rel_error": cons["angular_momentum_rel_error"],
             "energy_rel_error": cons["energy_rel_error"],

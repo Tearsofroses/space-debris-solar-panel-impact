@@ -58,17 +58,16 @@ def tangent_of(n):
 # ----------------------------------------------------------------------------
 # Collision mechanics (impulse-momentum solution)
 # ----------------------------------------------------------------------------
-def normal_compliance(m, M, I, arm, n):
+def normal_compliance(m, M, I, rxn):
     """k = 1/m + 1/M + (r x n)^2 / I: change of relative normal speed per unit impulse."""
-    return 1.0 / m + 1.0 / M + cross_z(arm, n) ** 2 / I
+    return 1.0 / m + 1.0 / M + rxn ** 2 / I
 
 
 def debris_velocity(speed, impact_angle, n):
     """Debris velocity for a hit at `impact_angle` from the panel normal (moving into the panel)."""
     t = tangent_of(n)
     cos_a, sin_a = np.cos(impact_angle), np.sin(impact_angle)
-    return np.array([-speed * (cos_a * n[0] + sin_a * t[0]),
-                     -speed * (cos_a * n[1] + sin_a * t[1])])
+    return -speed * (np.multiply.outer(n, cos_a) + np.multiply.outer(t, sin_a))
 
 
 def analytic_collision(m, M, I, arm, n, speed, impact_angle, collision):
@@ -82,22 +81,26 @@ def analytic_collision(m, M, I, arm, n, speed, impact_angle, collision):
                          f"(got {collision!r})")
     m, speed, impact_angle = np.broadcast_arrays(*(np.asarray(x, dtype=float)
                                                    for x in (m, speed, impact_angle)))
-    k = normal_compliance(m, M, I, arm, n)
+    f = COLLISION_FACTORS[collision]
+    rxn = cross_z(arm, n)                        # lever arm of the impulse, r x n
+    k = normal_compliance(m, M, I, rxn)
     v_n = speed * np.cos(impact_angle)           # normal approach speed
-    J = COLLISION_FACTORS[collision] * v_n / k   # normal impulse magnitude, N s
+    J = f * v_n / k                              # normal impulse magnitude, N s
 
-    dv_sat_x, dv_sat_y = -J * n[0] / M, -J * n[1] / M
-    d_omega = -J * cross_z(arm, n) / I
+    Jn = np.multiply.outer(n, J)                 # impulse vector J n
+    dv_sat = -Jn / M
+    d_omega = -J * rxn / I
     vd0 = debris_velocity(speed, impact_angle, n)
-    vd1 = vd0 + np.array([J * n[0], J * n[1]]) / m
+    vd1 = vd0 + Jn / m
 
     ke0 = 0.5 * m * speed ** 2
-    e_diss = np.zeros_like(ke0) if collision == "elastic" else 0.5 * v_n ** 2 / k
-    dv_mag = np.hypot(dv_sat_x, dv_sat_y)
+    # energy lost = J v_n - J^2 k / 2 = f (2 - f) / 2 * v_n^2 / k: 0 elastic, v_n^2/(2k) inelastic
+    e_diss = 0.5 * f * (2.0 - f) * v_n ** 2 / k
+    dv_mag = np.hypot(*dv_sat)
     return {
         "impulse_Ns": J,
-        "sat_dv_x_m_s": dv_sat_x,
-        "sat_dv_y_m_s": dv_sat_y,
+        "sat_dv_x_m_s": dv_sat[0],
+        "sat_dv_y_m_s": dv_sat[1],
         "sat_dv_mag_m_s": dv_mag,
         "sat_omega_rad_s": d_omega,
         "debris_vx_after_m_s": vd1[0],
@@ -105,7 +108,7 @@ def analytic_collision(m, M, I, arm, n, speed, impact_angle, collision):
         "impact_energy_J": ke0,
         "dissipated_energy_J": e_diss,
         "dissipated_fraction": np.divide(e_diss, ke0, out=np.zeros_like(ke0), where=ke0 > 0),
-        "ke_debris_after_J": 0.5 * m * (vd1[0] ** 2 + vd1[1] ** 2),
+        "ke_debris_after_J": 0.5 * m * dot(vd1, vd1),
         "ke_sat_translation_J": 0.5 * M * dv_mag ** 2,
         "ke_sat_rotation_J": 0.5 * I * d_omega ** 2,
         # momentum transfer ratio: impulse given / normal momentum carried in
@@ -113,12 +116,12 @@ def analytic_collision(m, M, I, arm, n, speed, impact_angle, collision):
     }
 
 
-def conservation_check(m, M, I, arm, n, speed, impact_angle, collision):
+def conservation_check(r, m, M, I, arm, n, speed, impact_angle):
     """Before/after balance of P, L (about the satellite CoM) and energy for one impact.
 
+    `r` is the analytic_collision result for the same inputs.
     Returns the relative residuals; all should be at round-off level.
     """
-    r = analytic_collision(m, M, I, arm, n, speed, impact_angle, collision)
     vd0 = debris_velocity(speed, impact_angle, n)
     vd1 = np.array([r["debris_vx_after_m_s"], r["debris_vy_after_m_s"]])
     dV = np.array([r["sat_dv_x_m_s"], r["sat_dv_y_m_s"]])
@@ -132,15 +135,19 @@ def conservation_check(m, M, I, arm, n, speed, impact_angle, collision):
     energy_gap = r["impact_energy_J"] - ke_after - r["dissipated_energy_J"]
 
     p_scale = float(np.hypot(*p_before))
-    l_scale = max(abs(float(l_before)), p_scale * float(np.hypot(*arm)), p_scale * 1e-3)
+    l_scale = max(abs(float(l_before)), p_scale * float(np.hypot(*arm)))
+    # a hit through the CoM (arm = 0) carries no angular momentum: L = 0 before and after
+    l_error = abs(float(l_after - l_before)) / l_scale if l_scale > 0 else 0.0
     return {
         "momentum_rel_error": float(np.hypot(*(p_after - p_before))) / p_scale,
-        "angular_momentum_rel_error": abs(float(l_after - l_before)) / l_scale,
+        "angular_momentum_rel_error": l_error,
         "energy_rel_error": abs(float(energy_gap)) / float(r["impact_energy_J"]),
         "momentum_before_kg_m_s": p_scale,
         "momentum_after_kg_m_s": float(np.hypot(*p_after)),
         "angular_momentum_before": float(l_before),
         "angular_momentum_after": float(l_after),
+        "energy_before_J": float(r["impact_energy_J"]),
+        "energy_after_J": float(ke_after + r["dissipated_energy_J"]),
     }
 
 
