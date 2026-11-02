@@ -1,7 +1,7 @@
 """Input parsing and validation.
 
 Every physical parameter is read from JSON/CSV files in inputs/ and data/.
-Non-physical values (negative mass, e outside [0, 1], ...) are rejected here,
+Non-physical values (negative mass, unknown collision type, ...) are rejected here,
 before any computation starts.
 """
 
@@ -12,17 +12,15 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+COLLISION_TYPES = {"elastic", "inelastic"}
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR = PROJECT_ROOT / "data"
 
 
 @dataclass(frozen=True)
 class Constants:
-    mu_earth: float              # m^3/s^2
+    mu_earth: float              # G * M_earth, m^3/s^2
     earth_radius: float          # m
-    emr_threshold: float         # J/kg, catastrophic breakup threshold
-    vaporization_energy: float   # J/kg
-    hypervelocity_threshold: float  # m/s
 
 
 @dataclass(frozen=True)
@@ -40,18 +38,10 @@ class Scenario:
     debris_density: float        # kg/m^3
     speed: float                 # relative impact speed v0, m/s
     impact_angle_deg: float      # angle between debris path and the panel normal
-    # contact model
-    restitution: float           # e, normal coefficient of restitution
-    contact_duration: float      # t_c, s
-    # orbit
+    # collision
+    collision_type: str          # "elastic" or "inelastic" (completely inelastic)
+    # orbit (only used to compare dV with the orbital speed)
     altitude: float              # m
-    n_orbits: float
-    # numerics
-    method: str
-    rtol: float
-    t_max_factor: float
-    n_output_impact: int
-    n_output_orbit: int
 
     @property
     def panel_normal(self):
@@ -97,11 +87,6 @@ def load_constants(path=DATA_DIR / "constants.json"):
     return Constants(
         mu_earth=_positive(raw["earth_gravitational_parameter_m3_s2"], "mu_earth"),
         earth_radius=_positive(raw["earth_radius_m"], "earth_radius"),
-        emr_threshold=_positive(raw["catastrophic_emr_threshold_J_kg"], "EMR threshold"),
-        vaporization_energy=_positive(raw["aluminium_vaporization_specific_energy_J_kg"],
-                                      "vaporization energy"),
-        hypervelocity_threshold=_positive(raw["hypervelocity_threshold_m_s"],
-                                          "hypervelocity threshold"),
     )
 
 
@@ -116,34 +101,26 @@ def validate(s):
     """Physical sanity checks on a fully built Scenario. Returns the scenario."""
     for label, value in [("satellite mass", s.sat_mass), ("moment of inertia", s.sat_inertia),
                          ("debris mass", s.debris_mass), ("impact speed", s.speed),
-                         ("contact duration", s.contact_duration), ("altitude", s.altitude),
-                         ("n_orbits", s.n_orbits), ("rtol", s.rtol),
-                         ("impact_t_max_factor", s.t_max_factor)]:
+                         ("altitude", s.altitude)]:
         _positive(value, label)
-    if not 0.0 <= s.restitution <= 1.0:
-        raise ValueError(f"Non-physical input: coefficient of restitution must be in [0, 1] "
-                         f"(got {s.restitution})")
+    if s.collision_type not in COLLISION_TYPES:
+        raise ValueError(f"collision_type must be one of {sorted(COLLISION_TYPES)} "
+                         f"(got {s.collision_type!r})")
     if not 0.0 <= s.impact_angle_deg < 90.0:
         raise ValueError(f"Impact angle must be in [0, 90) deg so the fragment actually "
                          f"reaches the panel (got {s.impact_angle_deg})")
     if s.panel_point.shape != (2,) or not np.all(np.isfinite(s.panel_point)):
         raise ValueError("panel_impact_point_m must be a list of two finite numbers [x, y]")
-    if s.t_max_factor < 1.0:
-        raise ValueError("impact_t_max_factor must be >= 1 to resolve the whole contact")
-    if s.n_output_impact < 10 or s.n_output_orbit < 10:
-        raise ValueError("n_output_impact and n_output_orbit must be >= 10")
     return s
 
 
-def load_scenario(path, materials=None):
+def load_scenario(path, materials):
     raw = _read_json(path)
-    materials = load_materials() if materials is None else materials
     where = str(path)
     sat = _require(raw, "satellite", where)
     deb = _require(raw, "debris", where)
     con = _require(raw, "contact", where)
     orb = _require(raw, "orbit", where)
-    sim = raw.get("simulation", {})
 
     material = _require(deb, "material", where)
     if material not in materials:
@@ -162,15 +139,8 @@ def load_scenario(path, materials=None):
         debris_density=float(materials[material]),
         speed=float(_require(deb, "relative_speed_m_s", where)),
         impact_angle_deg=float(_require(deb, "impact_angle_deg", where)),
-        restitution=float(_require(con, "coefficient_of_restitution", where)),
-        contact_duration=float(_require(con, "contact_duration_s", where)),
+        collision_type=str(_require(con, "collision_type", where)),
         altitude=float(_require(orb, "altitude_m", where)),
-        n_orbits=float(orb.get("n_orbits", 3.0)),
-        method=str(sim.get("method", "DOP853")),
-        rtol=float(sim.get("rtol", 1e-10)),
-        t_max_factor=float(sim.get("impact_t_max_factor", 6.0)),
-        n_output_impact=int(sim.get("n_output_impact", 2000)),
-        n_output_orbit=int(sim.get("n_output_orbit", 3000)),
     )
     return validate(s)
 
@@ -180,7 +150,7 @@ _OVERRIDE_FIELDS = {
     "debris_mass_kg": "debris_mass",
     "relative_speed_m_s": "speed",
     "impact_angle_deg": "impact_angle_deg",
-    "coefficient_of_restitution": "restitution",
+    "collision_type": "collision_type",
     "panel_impact_point_m": "panel_point",
     "satellite_mass_kg": "sat_mass",
 }
@@ -194,7 +164,8 @@ def override_scenario(base, overrides):
             changes["name"] = value
         elif key in _OVERRIDE_FIELDS:
             field = _OVERRIDE_FIELDS[key]
-            changes[field] = np.asarray(value, dtype=float) if field == "panel_point" else float(value)
+            changes[field] = (np.asarray(value, dtype=float) if field == "panel_point"
+                              else value if field == "collision_type" else float(value))
         else:
             raise KeyError(f"Unknown override key '{key}'. Allowed: {sorted(_OVERRIDE_FIELDS)}")
     return validate(replace(base, **changes))
@@ -203,11 +174,6 @@ def override_scenario(base, overrides):
 def load_parametric_config(path):
     raw = _read_json(path)
     for key in ["reference_scenario", "mass_speed_grid", "impact_angle_sweep",
-                "restitution_sweep", "mass_ratio_sweep", "monte_carlo", "extreme_cases"]:
+                "mass_ratio_sweep", "extreme_cases"]:
         _require(raw, key, str(path))
-    mc = raw["monte_carlo"]
-    if mc["mass_min_kg"] <= 0 or mc["mass_max_kg"] <= mc["mass_min_kg"]:
-        raise ValueError("monte_carlo: need 0 < mass_min_kg < mass_max_kg")
-    if not 0.0 <= mc["restitution_min"] <= mc["restitution_max"] <= 1.0:
-        raise ValueError("monte_carlo: need 0 <= restitution_min <= restitution_max <= 1")
     return raw

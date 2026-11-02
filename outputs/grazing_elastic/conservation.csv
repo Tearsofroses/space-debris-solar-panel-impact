@@ -1,0 +1,4 @@
+scenario,quantity,before,after,rel_error
+grazing_elastic,linear momentum |P| (kg m/s),10.0,10.0,0.0
+grazing_elastic,angular momentum L_z about CoM (kg m^2/s),-6.945927106677219,-6.945927106677219,0.0
+grazing_elastic,kinetic energy + dissipated (J),50000.0,49999.99999999999,1.4551915228366853e-16
