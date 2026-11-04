@@ -1,0 +1,77 @@
+\newpage
+\section{Discussion and Conclusion}
+\label{sec:discussion}
+
+\subsection{Discussion}
+
+\paragraph{Comparing with the hypothesis.}
+Our results agree with all three parts of the hypothesis
+(Section~\ref{sec:hypothesis}). In the baseline, a 1~g fragment changes
+the satellite's velocity by $20.0\unit{mm\,s^{-1}}$, which is only
+$2.6\times10^{-6}$ of the orbital speed (Table~\ref{tab:results}). So one
+hit like this does not really change the orbit. The spin is
+$1.65^\circ\unit{s^{-1}}$, about what we expected. The angular momentum
+$m v_0\cos\theta\, b=34.6\unit{kg\,m^2\,s^{-1}}$ is large because the hit
+is at the tip of the panel, 4~m from the CoM. At this rate the satellite
+would turn a full circle in less than four minutes if nothing stopped it.
+Finally, $99.9988\%$ of the $50\unit{kJ}$ is lost. This is a little less
+than the $M/(m+M)=99.9998\%$ for a hit through the CoM, because
+$0.5\unit{J}$ goes into rotation. The satellite gets less than $1\unit{J}$
+of kinetic energy in total. In other words, the momentum is passed on
+very well, but the energy is not.
+
+\paragraph{What the sweeps show.}
+The angle sweep (Fig.~\ref{fig:angle}) shows that the type of collision
+changes not only how much momentum is passed on, but also which part. A
+fragment that sticks always gives all of its momentum, so $|\Delta\vect V|$
+does not depend on $\theta$. A fragment that bounces off only doubles the
+normal part, so it gives a bigger push than a sticking fragment only when
+$\theta<60^\circ$. The spin depends only on the normal impulse in our
+geometry, so it drops like $\cos\theta$ in both cases. The mass--speed map
+(Fig.~\ref{fig:mass-speed}) grows linearly with $m$ and $v_0$ as long as
+$m\ll M$. Its top corner (kilograms at $15\unit{km\,s^{-1}}$, up to
+$1.1\unit{GJ}$) is outside what our model can describe: a hit like that
+would break the satellite apart instead of just pushing it.
+
+\paragraph{How precise are the inputs?}
+When $m\ll M$, $|\Delta\vect V|$ and $\omega$ are proportional to $m$ and
+$v_0$. So a 10\% error in the input mass or speed gives a 10\% error in
+the results, and $E_{\mathrm{diss}}$ doubles any relative error in $v_0$.
+The computer's precision is not a problem: the errors of $10^{-16}$
+(Table~\ref{tab:results}) and the match with the 1-D formulas to
+$6.7\times10^{-16}$ show that the code solves the equations exactly. What
+limits the accuracy is the model itself. The satellite is rigid and 2-D,
+the fragment is a point, and a real hit at these speeds is somewhere
+between elastic and completely inelastic. Material thrown back out of the
+crater can even make the momentum transfer bigger than in the completely
+inelastic case, and our model does not include this.
+
+\paragraph{Comparing with a real event.}
+For the Sentinel-1A hit, \citet{krag2017} used GPS and attitude data to
+estimate a velocity change of only about $0.7\unit{mm\,s^{-1}}$ and a
+peak rotation rate of about $0.04^\circ\unit{s^{-1}}$ about the yaw axis.
+Our numbers are bigger because our satellite is lighter, with a smaller
+moment of inertia, and because we chose the fragment and its speed
+ourselves. But the overall picture is the same: the velocity change was
+tiny compared with the orbital speed, while the change in orientation
+could clearly be measured. This supports our conclusion that, for small
+debris, the spin from an off-centre hit matters more than the change in
+orbit.
+
+\input{content/sec4b_applications.tex}
+
+\subsection{Conclusion}
+
+Using conservation of linear and angular momentum together with the
+impulse--momentum theorem and the parallel-axis theorem, we could solve
+exactly what happens when a debris fragment hits a solar panel, for both
+the elastic and the completely inelastic case. Our Python program shows
+that a 1~g fragment at $10\unit{km\,s^{-1}}$ changes the velocity of a
+500~kg satellite by only $20\unit{mm\,s^{-1}}$ ($2.6\times10^{-6}$ of its
+orbital speed). However, it makes the satellite spin at
+$1.65^\circ\unit{s^{-1}}$, and almost all of the $50\unit{kJ}$ impact
+energy is lost at the panel. These results confirm our hypothesis, show
+the same pattern as the Sentinel-1A measurements, and pass the
+conservation checks to round-off level. As a next step, the two ideal
+cases could be replaced by a measured momentum-transfer value, and the
+orbit after the hit could be calculated.

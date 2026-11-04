@@ -1,0 +1,118 @@
+\newpage
+\section{Computational and Python Coding Methods}
+\label{sec:computational-methods}
+
+\subsection{Model and assumptions}
+
+Our program calculates what happens to the satellite right after one hit:
+the impulse it gets, its velocity change $\Delta\vect V$, its spin
+$\omega$, the fragment's velocity after the hit, and where the kinetic
+energy goes. We do not step through time. Instead, the program plugs the
+inputs into the exact formulas from Section~\ref{sec:basic-physics}. We
+made these assumptions:
+\begin{itemize}
+  \item \textit{The collision is instant.} Outside forces act for too
+    short a time to matter, so $\vect P$ and $L_z$ are conserved
+    (Eq.~\eqref{eq:conservation}). We do not model how the contact force
+    changes during the hit.
+  \item \textit{Two dimensions.} Everything moves in the orbital plane and
+    the satellite only spins about $z$.
+  \item \textit{Rigid satellite, point-mass fragment.} The satellite does
+    not bend or break. The fragment's size is only used to report the
+    diameter of a sphere with the same mass, $d=(6m/\pi\rho)^{1/3}$.
+  \item \textit{Only two ideal types of collision.} Elastic with no
+    friction (Eqs.~\eqref{eq:impulse}--\eqref{eq:J-elastic}), or completely
+    inelastic (Eqs.~\eqref{eq:rc}--\eqref{eq:omega-inelastic}). A real
+    fragment at these speeds melts or vaporises, so the real answer is
+    somewhere between the two.
+  \item \textit{The orbit is only used for scale.} We only report
+    $|\Delta\vect V|/v_{\mathrm{orb}}$; we do not calculate the new orbit.
+\end{itemize}
+
+\subsection{Algorithm}
+
+For each hit, the program does these steps.
+\begin{enumerate}
+  \item Make the unit vectors $\hat{\vect n}=(\cos\alpha,\sin\alpha)$ from
+    the panel angle $\alpha$ and $\hat{\vect t}=\hat{\vect z}\times\hat{\vect n}$,
+    then find $\vect v_{d0}$ from Eq.~\eqref{eq:vd0}.
+  \item \textit{Elastic:} find $b=r_xn_y-r_yn_x$, $k$ from Eq.~\eqref{eq:k}
+    and $J$ from Eq.~\eqref{eq:J-elastic}. Then
+    $\Delta\vect V=-J\hat{\vect n}/M$, $\omega=-Jb/I$ and
+    $\vect v_{d1}=\vect v_{d0}+J\hat{\vect n}/m$ (Eq.~\eqref{eq:impulse}).
+  \item \textit{Completely inelastic:} find $\vect r_c$, $\vect v_{CM}$,
+    $I_c$ and $\omega$ from Eqs.~\eqref{eq:rc}--\eqref{eq:omega-inelastic}.
+    The old CoM of the satellite then moves with
+    $\Delta\vect V=\vect v_{CM}+\omega\hat{\vect z}\times(-\vect r_c)$, and
+    the stuck fragment moves with
+    $\vect v_{d1}=\vect v_{CM}+\omega\hat{\vect z}\times(\vect r-\vect r_c)$.
+  \item Find $K_0$, $K_{d1}$, the satellite's kinetic energy of moving and
+    turning, and $E_{\mathrm{diss}}$ (Eq.~\eqref{eq:ediss}). The impulse
+    on the satellite is reported as $M|\Delta\vect V|$.
+  \item Find the speed of a circular orbit. Gravity is the centripetal
+    force, $GM_EM/(R_E+h)^2=Mv_{\mathrm{orb}}^2/(R_E+h)$, so
+    \begin{equation}
+      v_{\mathrm{orb}}=\sqrt{\mu_E/(R_E+h)},
+      \label{eq:vorb}
+    \end{equation}
+    where $\mu_E=GM_E$, $R_E$ is Earth's radius and $h$ is the altitude.
+    Then report $|\Delta\vect V|/v_{\mathrm{orb}}$.
+  \item Check the conservation laws. The program calculates $\vect P$ and
+    $L_z$ (Eq.~\eqref{eq:conservation}) before and after, and the energy
+    balance, and reports the relative errors
+    \begin{equation}
+      \varepsilon_P=\frac{|\vect P_1-\vect P_0|}{|\vect P_0|},\quad
+      \varepsilon_L=\frac{|L_{z1}-L_{z0}|}{|L_{z0}|},\quad
+      \varepsilon_E=\frac{|K_0-K_{d1}-K_T-K_R-E_{\mathrm{diss}}|}{K_0}.
+      \label{eq:residuals}
+    \end{equation}
+    For a hit through the CoM, $L_{z0}=0$, so $\varepsilon_L$ is divided
+    by $|\vect P_0|\,|\vect r|$ instead.
+\end{enumerate}
+The energy check is a real test. $E_{\mathrm{diss}}$ is calculated on its
+own in the inelastic case and is set to zero in the elastic case, so
+$\varepsilon_E$ is only zero if the impulses in
+Eqs.~\eqref{eq:impulse}--\eqref{eq:omega-inelastic} are correct. For the
+mass-ratio sweep (head-on, $\vect r=\vect 0$), the program also compares
+its answers with the 1-D formulas in Section~\ref{sec:basic-physics} and
+with $v=m_1v_1/(m_1+m_2)$ for the completely inelastic case.
+
+\subsection{Python implementation}
+
+The code is written in Python 3.12 and is run with
+\texttt{uv run main.py}. It has four files.
+\texttt{input\_parser.py} reads the inputs, changes angles to radians and
+stops the program if a value makes no physical sense (mass, moment of
+inertia, speed or altitude not positive, unknown collision type, or impact
+angle outside $[0^\circ,90^\circ)$). \texttt{physics\_model.py} has the
+formulas (Eqs.~\eqref{eq:vd0}--\eqref{eq:ediss} and Eq.~\eqref{eq:vorb})
+and the conservation check. \texttt{solvers.py} runs the scenarios, the
+parameter sweeps and the limiting cases, and \texttt{main.py} saves all
+the tables and figures. The physics functions work on whole NumPy arrays,
+so a full sweep is done in one call instead of a loop. We use pandas for
+the output tables and Matplotlib for the figures. No physical number is
+typed into the code; all of them come from the input files.
+
+\subsection{Input and output design}
+
+Each scenario is one JSON file with four parts: \textit{satellite} ($M$,
+$I$, impact point $\vect r$, panel angle $\alpha$), \textit{debris} ($m$,
+material, $v_0$, $\theta$), \textit{contact} (\texttt{elastic} or
+\texttt{completely\_inelastic}) and \textit{orbit} ($h$). Every key name
+includes its unit (for example \texttt{mass\_kg}). A CSV file lists the
+density of each material, and a JSON file stores $\mu_E$ and $R_E$.
+Another JSON file sets up the parameter study: a $71\times57$ grid of
+debris masses ($10^{-6}$--$10\unit{kg}$, log spacing) and speeds
+($1$--$15\unit{km\,s^{-1}}$), 179 impact angles from $0^\circ$ to
+$89^\circ$ for each collision type, 241 mass ratios $m/M$ from $10^{-6}$
+to $100$ for each type, and eight limiting cases.
+
+For each scenario, the program saves \texttt{summary.csv} (all results
+and errors) and \texttt{conservation.csv} (the values of $\vect P$, $L_z$
+and energy before and after). It also saves combined tables for all
+scenarios and one CSV file per sweep. We designed each figure to show one
+idea: bar charts of momentum (normal and tangential parts) and energy
+before and after the hit, a colour map of $|\Delta\vect V|$ against mass
+and speed, line graphs of $|\Delta\vect V|$ and $|\omega|$ against angle
+and mass ratio, and a bar chart of the conservation errors. We use log
+scales when a quantity covers many orders of magnitude.

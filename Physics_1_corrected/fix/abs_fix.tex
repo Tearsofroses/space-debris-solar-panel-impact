@@ -1,0 +1,18 @@
+Orbital debris poses a persistent threat to spacecraft, and solar panels are
+among the most exposed components. This project, \textit{Space Debris Impact on
+Solar Panels}, uses conservation of linear momentum,
+$\mathbf{P}_{\mathrm{before}} = \mathbf{P}_{\mathrm{after}}$, to assess how a
+small debris fragment alters a satellite's motion during a collision. The aim is
+to determine the impulse delivered, the resulting change in translational
+velocity, the induced spin, and the energy dissipated for a range of impact
+conditions. A Python program implements the analytical impulse--momentum and
+angular-momentum relations for three scenarios and runs parameter sweeps over
+debris mass, impact speed, incidence angle, and mass ratio. The collision is
+modelled in two dimensions as an instantaneous, frictionless contact between a
+point-mass fragment and a rigid satellite, with either elastic or zero normal
+restitution. The spin is obtained from the torque of the translational impulse
+about the centre of mass, which leads to an approximate energy balance. The
+sweeps show that the velocity change grows with debris mass and impact speed and
+falls as the impact becomes more grazing. The results describe only the
+immediate rigid-body momentum exchange; permanent attachment, penetration, and
+structural damage lie outside the scope of the implemented model.

@@ -1,0 +1,16 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+
+\begin{document}
+
+\section{ENERGY}
+
+Kinetic energy is usually not conserved. We start with $K_0 = \frac{1}{2}mv_0^2$, and whatever is not left as kinetic energy of moving or turning is lost:
+\begin{equation}
+    E_{\text{diss}} = K_0 - \left[K_{d1} + \frac{1}{2}M|\mathbf{\Delta V}|^2 + \frac{1}{2}I\omega^2\right],
+\end{equation}
+where $K_{d1} = \frac{1}{2}m|\mathbf{v}_{d1}|^2$ is the kinetic energy of the fragment after the hit. In the elastic case $E_{\text{diss}} = 0$. In the completely inelastic case it is $K_0 - \frac{1}{2}(m + M)v_{CM}^2 - \frac{1}{2}I_c\omega^2$. For a hit through the CoM this is a fraction $M / (m + M)$ of $K_0$, the same as a bullet getting stuck in a block (Halliday et al., 2014). When $m \ll M$, almost all of $K_0$ becomes heat and damage.
+
+\end{document}
