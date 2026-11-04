@@ -8,12 +8,12 @@ We describe the motion in a 2-D frame (Fig.~\ref{fig:geometry}).
 The $x$ axis points away from Earth, $y$ points along the direction of
 flight, and $z$ (out of the plane) is perpendicular to the orbit, representing the spin axis.
 
-The satellite (body and panels) is a rigid body with mass $M (kg)$ and moment
-of inertia $I (kg\cdot m^2)$ about the $z$ axis through its centre of mass (CoM). In a frame
+The satellite (body and panels) is a rigid body with mass $M$ (kg) and moment
+of inertia $I$ (kg\,m$^2$) about the $z$ axis through its centre of mass (CoM). In a frame
 moving with the satellite, it is at rest before the hit.
 
-The fragment is a point mass $m (kg)$ moving at speed $v_0 (m/s)$. It hits
-the panel at the point $\vect r (m)$ (measured from the CoM), at an angle
+The fragment is a point mass $m$ (kg) moving at speed $v_0$ (m\,s$^{-1}$). It hits
+the panel at the point $\vect r$ (m) (measured from the CoM), at an angle
 $\theta$ from the outward normal $\hat{\vect n}$ of the panel. With the
 panel tangent $\hat{\vect t}=\hat{\vect z}\times\hat{\vect n}$, the
 velocity of the fragment and its speed along the normal are:
@@ -26,8 +26,8 @@ So $\theta=0$ is a head-on hit and $\theta$ close to $90^\circ$ is a
 grazing hit.
 
 \begin{itemize}
-  \item $\vect v_{d0}$: the initial velocity  of the fragment $(m/s)$
-  \item $v_n$: the speed of the fragment along the normal $(m/s)$
+  \item $\vect v_{d0}$: the initial velocity of the fragment (m\,s$^{-1}$)
+  \item $v_n$: the speed of the fragment along the normal (m\,s$^{-1}$)
 \end{itemize}
 
 \begin{figure}[H]
@@ -88,23 +88,15 @@ third law the satellite gets $-J\hat{\vect n}$. We apply the impulse--momentum t
   I\,\Delta\omega = \left(\vect r\times(-J\hat{\vect n})\right)_z = -J\,b,
   \label{eq:impulse}
 \end{equation}
-\begin{itemize}
-  \item $m$ and $M$ (in $\mathrm{kg}$) are the masses of the fragment and the
-satellite
-\item $\Delta\vect v_d$ and $\Delta\vect V$ (in $\mathrm{m\,s^{-1}}$) are
-their velocity changes
-\item $J$ (in $\mathrm{N\,s}$) is the impulse magnitude
-\item $I$ (in $\mathrm{kg\,m^{2}}$) is the satellite's moment of inertia about its centre of
-mass (CoM)
-\item $\Delta\omega$ (in $\mathrm{rad\,s^{-1}}$) is its change in angular
-velocity
-\item $\vect r$ (in $\mathrm{m}$) is the position of the impact point
-relative to the CoM
-\item $b=(\vect r\times\hat{\vect n})_z$ (in $\mathrm{m}$) is
-the lever arm of the impulse about the CoM. 
-\end{itemize}
+where $m$ and $M$ (kg) are the masses of the fragment and the satellite,
+$\Delta\vect v_d$ and $\Delta\vect V$ (m\,s$^{-1}$) their velocity changes,
+$J$ (N\,s) the size of the impulse, $I$ (kg\,m$^2$) the satellite's moment
+of inertia about its CoM, $\Delta\omega$ (rad\,s$^{-1}$) its change in
+angular velocity, $\vect r$ (m) the impact point measured from the CoM, and
+$b=(\vect r\times\hat{\vect n})_z$ (m) the lever arm of the impulse about
+the CoM.
 The point of the panel that is hit moves with
-the velocity $\vect V+\vect\omega\times\vect r$, so the satellite pushes back 
+the velocity $\vect V+\vect\omega\times\vect r$, so the struck point moves back
 in two ways: by the motion of the whole satellite and by its rotation. Hence every unit of
 impulse changes the relative normal speed between the fragment and the struck
 point by
@@ -112,14 +104,10 @@ point by
   k = \frac{1}{m}+\frac{1}{M}+\frac{b^{2}}{I},
   \label{eq:k}
 \end{equation}
-\begin{itemize}
-  \item $k$ is in $\mathrm{kg^{-1}}$
-  \item $m$ and $M$ (in $\mathrm{kg}$) are the masses of the fragment and the
-satellite
-  \item $b^2/I$ is $\mathrm{m^2/(kg\,m^2)}$.
-\end{itemize}
+Here $k$ is in kg$^{-1}$: $b^2/I$ has units m$^2$/(kg\,m$^2$) $=$ kg$^{-1}$,
+the same as $1/m$ and $1/M$.
  The three terms come from the
-fragment, the satellite moving and the satellite rotating ($b$ appear in the torque and in $v=\omega b$ (in $\mathrm{m\,s^{-1}}$)). In an elastic collision the
+fragment, the satellite moving and the satellite rotating ($b$ appears twice: in the torque and in the speed $v=\omega b$ of the struck point). In an elastic collision the
 relative normal speed is reversed, as in the one-dimensional case,
 which gives
 
@@ -128,23 +116,16 @@ which gives
   \label{eq:J-elastic}
 \end{equation}
 
-\begin{itemize}
-  \item $v_n$ (in $\mathrm{m\,s^{-1}}$) is the normal component of the approach
-speed
-\end{itemize}
+where $v_n$ (m\,s$^{-1}$) is the normal part of the approach speed.
 When the impulse passes through the CoM
 ($b=0$), $1/k=mM/(m+M)$ and
 Eqs.~\eqref{eq:impulse}--\eqref{eq:J-elastic} reduce to the textbook 1-D result
 for a target initially at rest,
 $v_1'=\dfrac{m_1-m_2}{m_1+m_2}\,v_1$ and
-$v_2'=\dfrac{2m_1}{m_1+m_2}\,v_1$ \citep{ling2016}
-
-\begin{itemize}
-  \item $m_1,m_2$ (in $\mathrm{kg}$) are the two masses
-  \item $v_1$ (in $\mathrm{m\,s^{-1}}$) is the initial
-speed of body~1
-  \item $v_1',v_2'$ (in $\mathrm{m\,s^{-1}}$) are the final speeds.
-\end{itemize}
+$v_2'=\dfrac{2m_1}{m_1+m_2}\,v_1$ \citep{ling2016},
+where $m_1$ and $m_2$ (kg) are the two masses, $v_1$ (m\,s$^{-1}$) is the
+initial speed of body~1 and $v_1'$, $v_2'$ (m\,s$^{-1}$) are the final
+speeds.
 Because the fragment's sideways velocity is unaffected, the
 fragment rebounds with most of its energy.
 
