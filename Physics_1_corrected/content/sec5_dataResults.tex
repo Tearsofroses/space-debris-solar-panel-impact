@@ -17,8 +17,6 @@ $v_{\mathrm{orb}}=7585.09\unit{m\,s^{-1}}$ (Eq.~\eqref{eq:vorb}).
 
 \begin{table}[H]
   \centering\footnotesize
-  \caption{Input data shared by the three scenarios.}
-  \label{tab:inputs}
   \begin{tabular}{@{}llr@{\hspace{1.2em}}llr@{}}
     \toprule
     Quantity & Symbol & Value & Quantity & Symbol & Value \\
@@ -30,6 +28,8 @@ $v_{\mathrm{orb}}=7585.09\unit{m\,s^{-1}}$ (Eq.~\eqref{eq:vorb}).
     Debris mass (aluminium) & $m$ & $0.001\unit{kg}$ & Earth radius & $R_E$ & $6\,378\,137\unit{m}$ \\
     \bottomrule
   \end{tabular}
+  \caption{Input data shared by the three scenarios.}
+  \label{tab:inputs}
 \end{table}
 
 \subsection{Scenario results}
@@ -44,8 +44,6 @@ in all three scenarios.
 
 \begin{table}[H]
   \centering\footnotesize
-  \caption{Calculated results for the three scenarios.}
-  \label{tab:results}
   \begin{tabular}{@{}lrrr@{}}
     \toprule
     Output quantity & Baseline & Head-on & Grazing \\
@@ -67,6 +65,8 @@ in all three scenarios.
     Residual $\varepsilon_E$ & 0 & 0 & $1.5\times10^{-16}$ \\
     \bottomrule
   \end{tabular}
+  \caption{Calculated results for the three scenarios.}
+  \label{tab:results}
 \end{table}
 
 
@@ -108,7 +108,7 @@ reversed and the fragment keeps almost all its energy.
     \caption{Grazing ($80^\circ$, elastic).}
     \label{fig:budget-grazing}
   \end{subfigure}
-  \caption{Momentum along $\hat{\vect n}$ and $\hat{\vect t}$ (left of each plot) and energy budget (right).}
+  \caption{Momentum along $\hat{\vect n}$ and $\hat{\vect t}$ (left of each plot; Deb = debris, Sat = satellite, Tot = total) and energy budget (right).}
   \label{fig:budget}
 \end{figure}
 
@@ -130,8 +130,6 @@ mass and speed.
     \label{fig:mass-speed}
   \end{minipage}\hfill
   \begin{minipage}[b]{0.6\linewidth}\centering\footnotesize
-    \captionof{table}{Limiting cases (baseline values unless stated).}
-    \label{tab:extreme}
     \setlength{\tabcolsep}{2.5pt}
     \begin{tabular}{@{}lrrr@{}}
     \toprule
@@ -146,7 +144,8 @@ mass and speed.
     Baseline, elastic & 0.0346 & $-0.0577$ & 0 \\
     \bottomrule
   \end{tabular}
-    \vspace{0.5em}
+    \captionof{table}{Limiting cases (baseline values unless stated).}
+    \label{tab:extreme}
   \end{minipage}
 \end{figure}
 

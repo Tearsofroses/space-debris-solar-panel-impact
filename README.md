@@ -31,7 +31,7 @@ main.py            orchestration: load inputs -> solve -> write CSV -> plot
 physics_model.py   equations: impulse-momentum, torque, conservation checks
 solvers.py         one-scenario solution and parametric sweeps
 input_parser.py    reads JSON/CSV, rejects non-physical inputs (m <= 0, unknown collision type, ...)
-plotting.py        all figures (matplotlib, 300 dpi)
+plotting.py        all figures (matplotlib, 600 dpi, drawn at print size)
 data/              constants.json (G*M_Earth, R_Earth), materials.csv (densities)
 inputs/            scenarios/*.json (one impact each), parametric_study.json
 outputs/           CSV tables (generated)
