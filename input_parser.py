@@ -24,19 +24,6 @@ class Constants:
     earth_radius: float          # m
 
 
-ODE_METHODS = ("RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA")
-
-
-@dataclass(frozen=True)
-class Simulation:
-    """Settings of the post-impact orbit integration (scipy.integrate.solve_ivp)."""
-    t_max: float                 # s, length of the simulated time after the impact
-    dt: float                    # s, spacing of the saved time steps
-    method: str                  # solve_ivp method, e.g. "DOP853" or "RK45"
-    rtol: float
-    atol: float
-
-
 @dataclass(frozen=True)
 class Scenario:
     name: str
@@ -54,10 +41,8 @@ class Scenario:
     impact_angle_deg: float      # angle between debris path and the panel normal
     # collision
     collision_type: str          # "elastic" or "completely_inelastic"
-    # orbit (circular before the impact)
+    # orbit (only used to compare dV with the orbital speed)
     altitude: float              # m
-    # post-impact time integration; None = do not simulate this scenario
-    simulation: Simulation | None = None
 
     @property
     def panel_normal(self):
@@ -121,26 +106,6 @@ def load_materials(path=DATA_DIR / "materials.csv"):
     return dict(zip(df["material"], density.astype(float)))
 
 
-def load_simulation(raw, where):
-    """Parse and check the optional "simulation" block of a scenario file."""
-    sim = Simulation(
-        t_max=_positive(_require(raw, "t_max_s", where), "simulation t_max_s"),
-        dt=_positive(_require(raw, "dt_s", where), "simulation dt_s"),
-        method=str(_require(raw, "method", where)),
-        rtol=_positive(_require(raw, "rtol", where), "simulation rtol"),
-        atol=_positive(_require(raw, "atol", where), "simulation atol"),
-    )
-    if sim.method not in ODE_METHODS:
-        raise ValueError(f"{where}: simulation method must be one of {list(ODE_METHODS)} "
-                         f"(got {sim.method!r})")
-    if sim.dt >= sim.t_max:
-        raise ValueError(f"{where}: simulation dt_s ({sim.dt}) must be smaller than "
-                         f"t_max_s ({sim.t_max})")
-    if sim.rtol >= 1e-3:
-        raise ValueError(f"{where}: simulation rtol must be < 1e-3 (got {sim.rtol})")
-    return sim
-
-
 def validate(s):
     """Physical sanity checks on a fully built Scenario. Returns the scenario."""
     for label, value in [("satellite mass", s.sat_mass), ("moment of inertia", s.sat_inertia),
@@ -185,7 +150,6 @@ def load_scenario(path, materials):
         impact_angle_deg=float(_require(deb, "impact_angle_deg", where)),
         collision_type=str(_require(con, "collision_type", where)),
         altitude=float(_require(orb, "altitude_m", where)),
-        simulation=load_simulation(raw["simulation"], where) if "simulation" in raw else None,
     )
     return validate(s)
 

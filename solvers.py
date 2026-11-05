@@ -1,14 +1,11 @@
 """Studies built on the impulse-momentum solution.
 
-1. solve_impact    : one scenario -> results + conservation check
-2. simulate_orbit  : time integration (solve_ivp) of the struck satellite's orbit after the
-                     impact, with E = K + U and L_z tracked at every time step
-3. parametric sweeps (mass x speed, angle, mass ratio) and extreme cases
+1. solve_impact  : one scenario -> results + conservation check
+2. parametric sweeps (mass x speed, angle, mass ratio) and extreme cases
 """
 
 import numpy as np
 import pandas as pd
-from scipy.integrate import solve_ivp
 
 import physics_model as pm
 from input_parser import override_scenario
@@ -72,79 +69,7 @@ def solve_impact(s, constants):
 
 
 # ----------------------------------------------------------------------------
-# 2. Post-impact orbit (time integration)
-# ----------------------------------------------------------------------------
-def post_impact_body(s, r):
-    """Mass, moment of inertia, CoM velocity and spin of the body that stays in orbit.
-
-    Elastic: the satellite alone (the fragment bounces away).
-    Completely inelastic: satellite + fragment, I_c from the parallel-axis theorem.
-    `r` is the scalar_solution of scenario `s`.
-    """
-    m, M, I = s.debris_mass, s.sat_mass, s.sat_inertia
-    dV = np.array([r["sat_dv_x_m_s"], r["sat_dv_y_m_s"]])
-    if s.collision_type == "elastic":
-        return M, I, np.zeros(2), dV, r["sat_omega_rad_s"]
-    r_c = m * s.panel_point / (m + M)                  # new CoM from the satellite CoM
-    I_c = I + M * pm.dot(r_c, r_c) + m * pm.dot(s.panel_point - r_c, s.panel_point - r_c)
-    vd1 = np.array([r["debris_vx_after_m_s"], r["debris_vy_after_m_s"]])
-    v_cm = (m * vd1 + M * dV) / (m + M)                # total momentum / total mass
-    return m + M, I_c, r_c, v_cm, r["sat_omega_rad_s"]
-
-
-def _integrate(sim, mu, y0, t_eval):
-    sol = solve_ivp(pm.gravity_rhs, (0.0, t_eval[-1]), y0, method=sim.method,
-                    t_eval=t_eval, rtol=sim.rtol, atol=sim.atol, args=(mu,),
-                    vectorized=True)
-    if not sol.success:
-        raise RuntimeError(f"solve_ivp ({sim.method}) failed: {sol.message}")
-    return sol.y
-
-
-def simulate_orbit(s, r, constants):
-    """Integrate the orbit after the impact and the un-hit reference orbit.
-
-    Before the impact the satellite is on a circular orbit of radius R_E + h, at
-    (R_E + h, 0) moving along +y, so x is radial and y along-track, as in the
-    collision frame. Returns the tidy time-series DataFrame (simulation_results.csv).
-    """
-    sim, mu = s.simulation, constants.mu_earth
-    radius = constants.earth_radius + s.altitude
-    v_orb = float(pm.orbital_speed(mu, radius))
-    t = np.arange(0.0, sim.t_max + 0.5 * sim.dt, sim.dt)
-
-    mass, inertia, r_c, v_cm, omega = post_impact_body(s, r)
-    y0 = np.array([radius + r_c[0], r_c[1], v_cm[0], v_orb + v_cm[1], 0.0, omega])
-    hit = _integrate(sim, mu, y0, t)
-    ref = _integrate(sim, mu, np.array([radius, 0.0, 0.0, v_orb, 0.0, 0.0]), t)
-
-    kinetic, potential, total = pm.mechanical_energy(hit, mass, inertia, mu)
-    L = pm.angular_momentum_z(hit, mass, inertia)
-    # displacement from the un-hit orbit, in the local radial / along-track directions
-    d = hit[:2] - ref[:2]
-    e_r = ref[:2] / np.hypot(*ref[:2])
-    e_t = pm.z_cross(e_r)
-    zeros = np.zeros_like(t)
-    return pd.DataFrame({
-        "time_t": t,
-        "pos_x": hit[0], "pos_y": hit[1], "pos_z": zeros,
-        "vel_x": hit[2], "vel_y": hit[3], "vel_z": zeros,
-        "kinetic_energy": kinetic,
-        "potential_energy": potential,
-        "total_energy": total,
-        "energy_rel_error": np.abs((total - total[0]) / total[0]),
-        "angular_momentum_z": L,
-        "angular_momentum_rel_error": np.abs((L - L[0]) / L[0]),
-        "spin_angle_rad": hit[4],
-        "spin_rate_rad_s": hit[5],
-        "deviation_radial_m": pm.dot(d, e_r),
-        "deviation_along_track_m": pm.dot(d, e_t),
-        "scenario": s.name,
-    })
-
-
-# ----------------------------------------------------------------------------
-# 3. Parametric studies (vectorised)
+# 2. Parametric studies (vectorised)
 # ----------------------------------------------------------------------------
 def mass_speed_grid(s, cfg):
     m = np.logspace(np.log10(cfg["mass_min_kg"]), np.log10(cfg["mass_max_kg"]), cfg["n_mass"])

@@ -16,7 +16,7 @@ rotation, gravity as centripetal force.
 ## Quick start
 
 ```bash
-uv sync                      # creates .venv with numpy, scipy, pandas, matplotlib
+uv sync                      # creates .venv with numpy, pandas, matplotlib
 uv run main.py               # all scenarios + parametric study
 uv run main.py inputs/scenarios/baseline.json --no-parametric   # one scenario only
 ```
@@ -28,10 +28,10 @@ physical is hard-coded in the Python files.
 
 ```
 main.py            orchestration: load inputs -> solve -> write CSV -> plot
-physics_model.py   equations: impulse-momentum, torque, conservation checks, gravity ODE
-solvers.py         one-scenario solution, post-impact orbit (solve_ivp), parametric sweeps
+physics_model.py   equations: impulse-momentum, torque, conservation checks
+solvers.py         one-scenario solution and parametric sweeps
 input_parser.py    reads JSON/CSV, rejects non-physical inputs (m <= 0, unknown collision type,
-                   bad sweep ranges, unknown ODE method, ...)
+                   impossible sweep ranges, ...)
 plotting.py        all figures (matplotlib, 300 dpi)
 data/              constants.json (G*M_Earth, R_Earth), materials.csv (densities)
 inputs/            scenarios/*.json (one impact each), parametric_study.json
@@ -94,22 +94,6 @@ v₂' = 2m₁v₁/(m₁ + m₂) (elastic) and v = m₁v₁/(m₁ + m₂) (comple
 **3. Orbit.** Gravity acts as the centripetal force, G M m / r² = m v²/r, so the circular
 orbital speed is v = √(GM/r). The code reports ΔV / v_orbit to show how small the kick is.
 
-**4. Post-impact orbit (time integration).** Before the hit the satellite is on a circular
-orbit at (R_E + h, 0), moving along +y. After the hit the struck body (the satellite, plus the
-fragment if it stuck) starts with the post-impact CoM velocity and spin, and moves under
-Newton's law of gravitation:
-
-    dr/dt = v,   dv/dt = −G M_E r / |r|³,   dφ/dt = ω,   dω/dt = 0  (no torque)
-
-`solvers.simulate_orbit` integrates this with `scipy.integrate.solve_ivp`. The method
-(`DOP853`, an explicit 8th-order Runge-Kutta method, since the problem is not stiff), the
-tolerances, the run time and the output step are set in the `simulation` block of each
-scenario file. At every time step the code records K = ½M_b v² + ½I ω², U = −G M_E M_b / r,
-E = K + U and L_z = M_b (r × v) + I ω, and their fractional drift |E(t) − E(0)| / |E(0)|
-(≈ 1e-12 here). The same orbit without the hit is integrated too, so the code can show how
-far the hit satellite moves away from where it would have been (about 600 m along-track
-after two orbits for the baseline).
-
 ## Assumptions and limitations
 
 - **Instantaneous collision.** External forces (gravity) are negligible during the very short
@@ -118,8 +102,12 @@ after two orbits for the baseline).
   case: the fragment sticks, so the contact also gives a tangential impulse.
 - **Rigid satellite, point-mass fragment, two ideal collision types.** A real hypervelocity
   fragment melts or vaporises and falls between the elastic and completely inelastic limits.
-- **Orbit.** Point-mass Earth gravity only (no drag, no Earth oblateness, no gravity-gradient
-  torque), so the spin stays constant after the hit.
+- **Orbit.** Only the size of ΔV relative to the orbital speed is reported. Orbit
+  perturbation theory is outside the course scope and is not modelled.
+- **No time integration.** Because the collision is instantaneous, every result comes from
+  closed-form conservation laws, so there is no equation of motion to integrate (no
+  `solve_ivp`, no time series). Conservation is checked before vs after the hit instead of
+  at every time step.
 - **Deterministic.** There are no random numbers, so no random seed is needed and every run
   gives the same tables.
 
@@ -140,23 +128,12 @@ after two orbits for the baseline).
 
 For each scenario, in `outputs/<scenario>/`:
 - `summary.csv`: one row with impulse, Δv, spin, energy lost, ΔV / v_orbit, conservation
-  residuals and the orbit-integration results
+  residuals
 - `conservation.csv`: before / after values of P, L and the energy balance
-- `simulation_results.csv`: the post-impact time series, with the columns `time_t`,
-  `pos_x`, `pos_y`, `pos_z`, `vel_x`, `vel_y`, `vel_z`, `kinetic_energy`,
-  `potential_energy`, `total_energy`, then `energy_rel_error`, `angular_momentum_z`,
-  `angular_momentum_rel_error`, `spin_angle_rad`, `spin_rate_rad_s`,
-  `deviation_radial_m`, `deviation_along_track_m`, `scenario` (SI units)
 
-`outputs/` also holds the combined `scenario_summary.csv`, `conservation.csv` and
-`simulation_results.csv`, and the parametric tables in `outputs/parametric/`.
+`outputs/` also holds the combined `scenario_summary.csv` and `conservation.csv`, and the
+parametric tables in `outputs/parametric/`.
 
-Figures for each scenario, in `visualizations/<scenario>/`:
-- `01_momentum_energy_budget.png`: momentum and energy before / after the hit
-- `02_trajectory.png`: the orbit, and the displacement from the un-hit orbit
-- `03_time_series.png`: x, y, v_x, v_y against time
-- `04_phase_space.png`: v_x against x and v_y against y
-- `05_energy_error.png`: E(t) − E(0) and the fractional errors of E and L (log scale)
-
-Parametric figures in `visualizations/parametric/`: ΔV map, angle sweep, mass-ratio sweep,
-conservation residuals.
+Figures: `visualizations/<scenario>/01_momentum_energy_budget.png` for each scenario, and the
+parametric figures in `visualizations/parametric/` (ΔV map, angle sweep,
+mass-ratio sweep, conservation residuals).

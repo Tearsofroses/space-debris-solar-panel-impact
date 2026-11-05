@@ -9,12 +9,6 @@ Only concepts from the lecture slides (Ch2-Ch3) are used:
     - kinetic energy K = 1/2 M v_CM^2 + 1/2 I_CM w^2              (Ch3, 2.5-2.7)
     - gravitational force as the centripetal force (circular orbit) (Ch2, 2.1, 2.3)
 
-After the impact (post-impact orbit, see the end of this file)
-    The struck body (satellite, plus the fragment if it stuck) moves under Newton's gravity
-        M_b dv/dt = -G M_E M_b r / |r|^3          (Ch2: gravitational force)
-    and spins freely at the constant rate w (no external torque about its CoM).
-    The total energy E = K + U and the angular momentum L_z are tracked at each time step.
-
 Frame (2-D, orbital plane): x = radial, y = along-track, z = orbit normal (spin axis).
 
 Bodies
@@ -187,34 +181,3 @@ def conservation_check(r, m, M, I, arm, n, speed, impact_angle):
 def orbital_speed(mu, radius):
     """G M m / r^2 = m v^2 / r  ->  v = sqrt(G M / r)."""
     return np.sqrt(mu / radius)
-
-
-def orbital_period(mu, radius):
-    """T = 2 pi r / v for a circular orbit."""
-    return 2.0 * np.pi * radius / orbital_speed(mu, radius)
-
-
-def gravity_rhs(t, y, mu):
-    """Equations of motion for solve_ivp. State y = [x, y, vx, vy, phi, omega].
-
-    dr/dt = v,  dv/dt = -mu r / |r|^3  (Newton's law of gravitation, per unit mass),
-    dphi/dt = omega,  domega/dt = 0  (torque-free spin about the CoM).
-    Works on a single state (6,) or on many states (6, N).
-    """
-    x, yy, vx, vy, _, omega = y
-    r3 = np.hypot(x, yy) ** 3
-    return np.array([vx, vy, -mu * x / r3, -mu * yy / r3, omega, np.zeros_like(omega)])
-
-
-def mechanical_energy(state, mass, inertia, mu):
-    """K (translation + rotation), U = -G M_E M_b / r and E = K + U for states (6, N)."""
-    x, yy, vx, vy, _, omega = state
-    kinetic = 0.5 * mass * (vx ** 2 + vy ** 2) + 0.5 * inertia * omega ** 2
-    potential = -mu * mass / np.hypot(x, yy)
-    return kinetic, potential, kinetic + potential
-
-
-def angular_momentum_z(state, mass, inertia):
-    """L_z about Earth's centre: orbital M_b (r x v) plus spin I w."""
-    x, yy, vx, vy, _, omega = state
-    return mass * cross_z((x, yy), (vx, vy)) + inertia * omega

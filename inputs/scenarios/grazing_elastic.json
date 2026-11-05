@@ -22,13 +22,5 @@
   },
   "orbit": {
     "altitude_m": 550000.0
-  },
-  "simulation": {
-    "_comment": "Post-impact orbit, integrated with scipy.integrate.solve_ivp. 11500 s is about two orbits at 550 km.",
-    "t_max_s": 11500.0,
-    "dt_s": 10.0,
-    "method": "DOP853",
-    "rtol": 1e-12,
-    "atol": 1e-09
   }
 }
