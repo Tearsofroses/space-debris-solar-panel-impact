@@ -1,5 +1,5 @@
 case,debris_mass_kg,impact_angle_deg,collision_type,panel_arm_m,sat_dv_m_s,sat_omega_rad_s,debris_v_after_m_s,dissipated_fraction,momentum_rel_error,angular_momentum_rel_error,energy_rel_error
-vanishing debris mass (1 microgram),1e-09,30.0,completely_inelastic,4.0,1.9999999999760002e-08,-2.8867513459038654e-08,1.33166562367556e-07,0.999999999988,1.694065894508601e-16,0.0,0.0
+vanishing debris mass (1 microgram),1e-09,30.0,completely_inelastic,4.0,1.9999999999760002e-08,-2.8867513459038654e-08,1.3316656236755601e-07,0.999999999988,1.6940658945086004e-16,0.0,0.0
 "equal masses, head-on, elastic, through CoM",500.0,0.0,elastic,0.0,10000.0,-0.0,0.0,0.0,0.0,0.0,0.0
 "equal masses, head-on, completely inelastic",500.0,0.0,completely_inelastic,0.0,5000.0,0.0,5000.0,0.5,0.0,0.0,0.0
 debris much heavier than satellite (100x),50000.0,0.0,elastic,0.0,19801.980198019803,-0.0,9801.980198019803,0.0,0.0,0.0,1.953125e-16

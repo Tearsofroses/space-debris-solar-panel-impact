@@ -24,6 +24,19 @@ class Constants:
     earth_radius: float          # m
 
 
+ODE_METHODS = ("RK45", "RK23", "DOP853", "Radau", "BDF", "LSODA")
+
+
+@dataclass(frozen=True)
+class Simulation:
+    """Settings of the post-impact orbit integration (scipy.integrate.solve_ivp)."""
+    t_max: float                 # s, length of the simulated time after the impact
+    dt: float                    # s, spacing of the saved time steps
+    method: str                  # solve_ivp method, e.g. "DOP853" or "RK45"
+    rtol: float
+    atol: float
+
+
 @dataclass(frozen=True)
 class Scenario:
     name: str
@@ -41,8 +54,10 @@ class Scenario:
     impact_angle_deg: float      # angle between debris path and the panel normal
     # collision
     collision_type: str          # "elastic" or "completely_inelastic"
-    # orbit (only used to compare dV with the orbital speed)
+    # orbit (circular before the impact)
     altitude: float              # m
+    # post-impact time integration; None = do not simulate this scenario
+    simulation: Simulation | None = None
 
     @property
     def panel_normal(self):
@@ -93,10 +108,37 @@ def load_constants(path=DATA_DIR / "constants.json"):
 
 
 def load_materials(path=DATA_DIR / "materials.csv"):
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Input file not found: {path}")
     df = pd.read_csv(path)
-    if (df["density_kg_m3"] <= 0).any():
-        raise ValueError(f"{path}: all material densities must be > 0")
-    return dict(zip(df["material"], df["density_kg_m3"].astype(float)))
+    for col in ("material", "density_kg_m3"):
+        if col not in df.columns:
+            raise KeyError(f"{path}: missing required column '{col}'")
+    density = pd.to_numeric(df["density_kg_m3"], errors="coerce")
+    if density.isna().any() or (density <= 0).any():
+        raise ValueError(f"{path}: all material densities must be numbers > 0")
+    return dict(zip(df["material"], density.astype(float)))
+
+
+def load_simulation(raw, where):
+    """Parse and check the optional "simulation" block of a scenario file."""
+    sim = Simulation(
+        t_max=_positive(_require(raw, "t_max_s", where), "simulation t_max_s"),
+        dt=_positive(_require(raw, "dt_s", where), "simulation dt_s"),
+        method=str(_require(raw, "method", where)),
+        rtol=_positive(_require(raw, "rtol", where), "simulation rtol"),
+        atol=_positive(_require(raw, "atol", where), "simulation atol"),
+    )
+    if sim.method not in ODE_METHODS:
+        raise ValueError(f"{where}: simulation method must be one of {list(ODE_METHODS)} "
+                         f"(got {sim.method!r})")
+    if sim.dt >= sim.t_max:
+        raise ValueError(f"{where}: simulation dt_s ({sim.dt}) must be smaller than "
+                         f"t_max_s ({sim.t_max})")
+    if sim.rtol >= 1e-3:
+        raise ValueError(f"{where}: simulation rtol must be < 1e-3 (got {sim.rtol})")
+    return sim
 
 
 def validate(s):
@@ -143,6 +185,7 @@ def load_scenario(path, materials):
         impact_angle_deg=float(_require(deb, "impact_angle_deg", where)),
         collision_type=str(_require(con, "collision_type", where)),
         altitude=float(_require(orb, "altitude_m", where)),
+        simulation=load_simulation(raw["simulation"], where) if "simulation" in raw else None,
     )
     return validate(s)
 
@@ -174,9 +217,52 @@ def override_scenario(base, overrides):
     return validate(replace(base, **changes))
 
 
+def _check_range(section, lo_key, hi_key, n_key, where, positive=True):
+    """lo < hi (both > 0 if they go through log10) and an integer count n >= 2."""
+    lo, hi = float(_require(section, lo_key, where)), float(_require(section, hi_key, where))
+    n = _require(section, n_key, where)
+    if positive:
+        _positive(lo, f"{where}: {lo_key}")
+    if not (np.isfinite(lo) and np.isfinite(hi) and lo < hi):
+        raise ValueError(f"{where}: need {lo_key} < {hi_key} (got {lo}, {hi})")
+    if isinstance(n, bool) or not isinstance(n, int) or n < 2:
+        raise ValueError(f"{where}: {n_key} must be an integer >= 2 (got {n!r})")
+    return lo, hi
+
+
+def _check_collision_types(section, where):
+    kinds = _require(section, "collision_types", where)
+    if not kinds or any(k not in COLLISION_TYPES for k in kinds):
+        raise ValueError(f"{where}: collision_types must be a non-empty list from "
+                         f"{list(COLLISION_TYPES)} (got {kinds!r})")
+
+
 def load_parametric_config(path):
+    """Read the parametric-study file and reject impossible sweep settings."""
     raw = _read_json(path)
+    where = str(path)
     for key in ["reference_scenario", "mass_speed_grid", "impact_angle_sweep",
                 "mass_ratio_sweep", "extreme_cases"]:
-        _require(raw, key, str(path))
+        _require(raw, key, where)
+
+    grid = raw["mass_speed_grid"]
+    _check_range(grid, "mass_min_kg", "mass_max_kg", "n_mass", f"{where} mass_speed_grid")
+    _check_range(grid, "speed_min_m_s", "speed_max_m_s", "n_speed", f"{where} mass_speed_grid")
+
+    ang = raw["impact_angle_sweep"]
+    lo, hi = _check_range(ang, "angle_min_deg", "angle_max_deg", "n_angle",
+                          f"{where} impact_angle_sweep", positive=False)
+    if lo < 0.0 or hi >= 90.0:
+        raise ValueError(f"{where} impact_angle_sweep: angles must be in [0, 90) deg "
+                         f"(got {lo} to {hi})")
+    _check_collision_types(ang, f"{where} impact_angle_sweep")
+
+    ratio = raw["mass_ratio_sweep"]
+    _check_range(ratio, "ratio_min", "ratio_max", "n_points", f"{where} mass_ratio_sweep")
+    _check_collision_types(ratio, f"{where} mass_ratio_sweep")
+
+    if not isinstance(raw["extreme_cases"], list):
+        raise ValueError(f"{where}: extreme_cases must be a list")
+    for case in raw["extreme_cases"]:
+        _require(case, "name", f"{where} extreme_cases")
     return raw

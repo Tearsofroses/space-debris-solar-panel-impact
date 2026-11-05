@@ -30,11 +30,32 @@ def run_scenario(path, constants, materials):
 
     summary, conservation = solvers.solve_impact(s, constants)
 
-    out = OUTPUTS / s.name
+    out, vis = OUTPUTS / s.name, VISUALS / s.name
     out.mkdir(parents=True, exist_ok=True)
-    pd.Series(summary, name="value").to_csv(out / "summary.csv", index_label="quantity")
     conservation.to_csv(out / "conservation.csv", index=False)
-    plotting.plot_budget(summary, s, VISUALS / s.name / "01_momentum_energy_budget.png")
+    plotting.plot_budget(summary, s, vis / "01_momentum_energy_budget.png")
+
+    timeseries = None
+    if s.simulation is not None:
+        timeseries = solvers.simulate_orbit(s, summary, constants)
+        timeseries.to_csv(out / "simulation_results.csv", index=False)
+        plotting.plot_trajectory(timeseries, constants.earth_radius, s.name,
+                                 vis / "02_trajectory.png")
+        plotting.plot_time_series(timeseries, s.name, vis / "03_time_series.png")
+        plotting.plot_phase_space(timeseries, s.name, vis / "04_phase_space.png")
+        plotting.plot_energy_error(timeseries, s.name, vis / "05_energy_error.png")
+        last = timeseries.iloc[-1]
+        summary.update({
+            "sim_method": s.simulation.method,
+            "sim_t_max_s": s.simulation.t_max,
+            "sim_max_energy_rel_error": timeseries["energy_rel_error"].max(),
+            "sim_max_angular_momentum_rel_error":
+                timeseries["angular_momentum_rel_error"].max(),
+            "sim_final_along_track_deviation_m": last["deviation_along_track_m"],
+            "sim_final_radial_deviation_m": last["deviation_radial_m"],
+        })
+    # one tidy row: every numeric quantity in its own typed column
+    pd.DataFrame([summary]).to_csv(out / "summary.csv", index=False)
 
     print(f"    debris: {s.debris_mass:g} kg {s.debris_material} "
           f"(d = {summary['debris_diameter_mm']:.2f} mm), {s.speed / 1e3:g} km/s, "
@@ -48,7 +69,13 @@ def run_scenario(path, constants, materials):
     print(f"    conservation residuals: |dP|/P = {summary['momentum_rel_error']:.1e}, "
           f"|dL|/L = {summary['angular_momentum_rel_error']:.1e}, "
           f"|dE|/E = {summary['energy_rel_error']:.1e}")
-    return summary, conservation
+    if timeseries is not None:
+        print(f"    orbit after {s.simulation.t_max:g} s ({s.simulation.method}): "
+              f"{summary['sim_final_along_track_deviation_m']:.4g} m along-track, "
+              f"{summary['sim_final_radial_deviation_m']:.4g} m radial from the un-hit orbit; "
+              f"max |dE/E0| = {summary['sim_max_energy_rel_error']:.1e}, "
+              f"max |dL/L0| = {summary['sim_max_angular_momentum_rel_error']:.1e}")
+    return summary, conservation, timeseries
 
 
 def run_parametric(path, materials):
@@ -93,18 +120,23 @@ def main(argv=None):
                         help="skip the parametric study")
     args = parser.parse_args(argv)
 
-    constants = load_constants()
-    materials = load_materials()
+    try:
+        constants = load_constants()
+        materials = load_materials()
+    except (OSError, KeyError, ValueError) as exc:
+        sys.exit(f"[ERROR] {exc}")
     paths = args.scenarios or sorted((INPUTS / "scenarios").glob("*.json"))
     if not paths:
         sys.exit("No scenario files found.")
 
-    summaries, conservations, failed = [], [], []
+    summaries, conservations, timeseries, failed = [], [], [], []
     for path in paths:
         try:
-            summary, conservation = run_scenario(path, constants, materials)
+            summary, conservation, ts = run_scenario(path, constants, materials)
             summaries.append(summary)
             conservations.append(conservation)
+            if ts is not None:
+                timeseries.append(ts)
         except (OSError, KeyError, ValueError, RuntimeError) as exc:
             print(f"\n[ERROR] {path}: {exc}", file=sys.stderr)
             failed.append(path)
@@ -114,12 +146,19 @@ def main(argv=None):
         pd.DataFrame(summaries).to_csv(OUTPUTS / "scenario_summary.csv", index=False)
         all_conservation = pd.concat(conservations, ignore_index=True)
         all_conservation.to_csv(OUTPUTS / "conservation.csv", index=False)
+        if timeseries:
+            pd.concat(timeseries, ignore_index=True).to_csv(
+                OUTPUTS / "simulation_results.csv", index=False)
         if not args.no_parametric:
             plotting.plot_conservation(all_conservation,
                                        VISUALS / "parametric" / "04_conservation.png")
 
     if not args.no_parametric:
-        run_parametric(args.parametric, materials)
+        try:
+            run_parametric(args.parametric, materials)
+        except (OSError, KeyError, ValueError, RuntimeError) as exc:
+            print(f"\n[ERROR] {args.parametric}: {exc}", file=sys.stderr)
+            failed.append(args.parametric)
 
     print(f"\nDone. Tables in {OUTPUTS.relative_to(PROJECT_ROOT)}/, "
           f"figures in {VISUALS.relative_to(PROJECT_ROOT)}/")

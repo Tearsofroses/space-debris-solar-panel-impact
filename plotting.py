@@ -156,3 +156,86 @@ def plot_conservation(df, out):
     ax.set_xlabel("Relative residual (round-off level)")
     ax.legend(loc="lower right")
     return _save(fig, out)
+
+
+# ----------------------------------------------------------------------------
+# Post-impact orbit figures (time integration with solve_ivp)
+# ----------------------------------------------------------------------------
+def plot_trajectory(df, earth_radius, name, out):
+    """(a) the orbit in the orbital plane, (b) its displacement from the un-hit orbit."""
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 5.2))
+    earth = plt.Circle((0, 0), earth_radius * KILO, color=GRID, label="Earth")
+    a1.add_patch(earth)
+    a1.plot(df["pos_x"] * KILO, df["pos_y"] * KILO, color=C1, label="Satellite orbit")
+    a1.plot(df["pos_x"].iloc[0] * KILO, df["pos_y"].iloc[0] * KILO, "o", color=C2,
+            label="Impact point (t = 0)")
+    a1.set_aspect("equal")
+    a1.set_title("Trajectory after the impact")
+    a1.set_xlabel("x, radial at impact (km)")
+    a1.set_ylabel("y, along-track at impact (km)")
+    a1.legend(loc="upper right")
+    a2.plot(df["deviation_along_track_m"], df["deviation_radial_m"], color=C2,
+            label="Hit orbit minus un-hit orbit")
+    a2.plot(0, 0, "o", color=INK2, label="Un-hit satellite position")
+    a2.set_title("Displacement from the un-hit orbit")
+    a2.set_xlabel("Along-track displacement (m)")
+    a2.set_ylabel("Radial displacement (m)")
+    a2.legend()
+    fig.suptitle(f"Post-impact trajectory - {name}", fontweight="bold")
+    return _save(fig, out)
+
+
+def plot_time_series(df, name, out):
+    """Positions and velocities of the satellite CoM against time."""
+    t = df["time_t"] / 60.0
+    fig, axes = plt.subplots(2, 2, figsize=(12, 6.4), sharex=True)
+    panels = [("pos_x", "x (km)", KILO, C1), ("pos_y", "y (km)", KILO, C2),
+              ("vel_x", "v_x (km/s)", KILO, C1), ("vel_y", "v_y (km/s)", KILO, C2)]
+    for ax, (col, label, scale, c) in zip(axes.ravel(), panels):
+        ax.plot(t, df[col] * scale, color=c, label=col)
+        ax.set_ylabel(label)
+        ax.set_title(f"{label.split(' ')[0]} against time")
+        ax.legend(loc="upper right")
+    for ax in axes[1]:
+        ax.set_xlabel("Time after impact (min)")
+    fig.suptitle(f"State variables over time - {name}", fontweight="bold")
+    return _save(fig, out)
+
+
+def plot_phase_space(df, name, out):
+    """v_x against x and v_y against y."""
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5.2))
+    for ax, (p, v, c) in zip(axes, [("x", "x", C1), ("y", "y", C2)]):
+        ax.plot(df[f"pos_{p}"] * KILO, df[f"vel_{v}"] * KILO, color=c,
+                label=f"v_{v}(t) against {p}(t)")
+        ax.plot(df[f"pos_{p}"].iloc[0] * KILO, df[f"vel_{v}"].iloc[0] * KILO, "o",
+                color=INK2, label="t = 0")
+        ax.set_title(f"Phase space: v_{v} against {p}")
+        ax.set_xlabel(f"{p} (km)")
+        ax.set_ylabel(f"v_{v} (km/s)")
+        ax.legend(loc="upper right")
+    fig.suptitle(f"Phase-space diagram - {name}", fontweight="bold")
+    return _save(fig, out)
+
+
+def plot_energy_error(df, name, out):
+    """Total energy E(t) and the fractional errors |(E(t) - E(0)) / E(0)|, |dL / L(0)|."""
+    t = df["time_t"] / 60.0
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 6.4), sharex=True)
+    e0 = df["total_energy"].iloc[0]
+    a1.plot(t, df["total_energy"] - e0, color=C1, label="E(t) - E(0), with E = K + U")
+    a1.set_ylabel("E(t) - E(0) (J)")
+    a1.set_title(f"Total mechanical energy over time (E(0) = {e0:.6e} J)")
+    a1.legend()
+    a2.plot(t, _floor(df["energy_rel_error"]), color="red",
+            label="Relative energy error |E(t) - E(0)| / |E(0)|")
+    a2.plot(t, _floor(df["angular_momentum_rel_error"]), color=C3,
+            label="Relative angular-momentum error |L(t) - L(0)| / |L(0)|")
+    a2.set_yscale("log")
+    a2.grid(True, which="both", ls="--")
+    a2.set_title("Integration error over time")
+    a2.set_xlabel("Time after impact (min)")
+    a2.set_ylabel("Fractional error (ΔE/E₀, ΔL/L₀)")
+    a2.legend()
+    fig.suptitle(f"Energy conservation check - {name}", fontweight="bold")
+    return _save(fig, out)
