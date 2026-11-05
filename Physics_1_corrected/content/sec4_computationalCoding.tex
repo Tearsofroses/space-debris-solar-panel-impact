@@ -80,15 +80,15 @@ with $v=m_1v_1/(m_1+m_2)$ for the completely inelastic case.
 \subsection{Python implementation}
 
 The code is written in Python 3.12 and is run with
-\texttt{uv run main.py}. It has four files.
+\texttt{uv run main.py}. It has five files.
 \texttt{input\_parser.py} reads the inputs, changes angles to radians and
 stops the program if a value makes no physical sense (mass, moment of
 inertia, speed or altitude not positive, unknown collision type, or impact
 angle outside $[0^\circ,90^\circ)$). \texttt{physics\_model.py} has the
 formulas (Eqs.~\eqref{eq:vd0}--\eqref{eq:ediss} and Eq.~\eqref{eq:vorb})
 and the conservation check. \texttt{solvers.py} runs the scenarios, the
-parameter sweeps and the limiting cases, and \texttt{main.py} saves all
-the tables and figures. The physics functions work on whole NumPy arrays,
+parameter sweeps and the limiting cases, \texttt{plotting.py} draws the
+figures, and \texttt{main.py} runs everything and saves the tables. The physics functions work on whole NumPy arrays,
 so a full sweep is done in one call instead of a loop. We use pandas for
 the output tables and Matplotlib for the figures. No physical number is
 typed into the code; all of them come from the input files.
