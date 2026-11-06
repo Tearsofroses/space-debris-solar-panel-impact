@@ -1,0 +1,54 @@
+\newpage
+\section{Introduction}
+\label{sec:introduction}
+
+The general topic of our project is conservation of linear momentum in
+collisions. When two objects hit each other, the forces between them are
+internal forces of the two-object system. During the very short contact
+they are also much bigger than any outside force, so the total momentum
+stays the same before and after the collision:
+\begin{equation}
+  m\vect v_{d0}+M\vect V_0 = m\vect v_{d1}+M\vect V_1 ,
+  \label{eq:intro-momentum}
+\end{equation}
+where $m$ and $M$ are the masses of the debris fragment and the satellite,
+$\vect v_d$ and $\vect V$ are their velocities, and the subscripts 0 and 1
+mean before and after the hit. Equation~\eqref{eq:intro-momentum} is true
+for every kind of collision. What changes from one kind to another is the
+kinetic energy: it is kept in an elastic collision and partly lost in an
+inelastic one \citep{halliday2014, ling2016}.
+
+Our specific title is \textit{Space Debris Impact on Solar Panels}. Low
+Earth orbit is full of small fragments left over from old explosions and
+collisions, and every new collision makes more of them. This chain
+reaction was first described by \citet{kessler1978}. Solar panels are
+usually the biggest surfaces on a satellite, so they get hit the most. A
+real example happened on 23 August 2016, when a particle about 1~cm in
+size hit a solar panel of the Sentinel-1A satellite. The satellite lost
+part of its power, and its orbit and orientation changed suddenly
+\citep{krag2017}. This event shows the two effects we study: a change in
+the satellite's velocity and a change in its spin.
+
+Both effects can be explained with basic physics. The fragment gives part
+of its momentum to the satellite (Eq.~\eqref{eq:intro-momentum}). Because
+the panel is far from the satellite's centre of mass, the same push also
+creates a torque, so the satellite starts to rotate. This is described by
+conservation of angular momentum. Kinetic energy is different, because it
+grows with $v^2$. A fragment moving at $10\unit{km\,s^{-1}}$ carries a lot
+of energy, and in a completely inelastic hit most of it turns into heat
+and damage on the panel.
+
+To solve the problem, we model the satellite as a rigid body and the
+fragment as a point mass. We then solve the two limiting collisions from
+the course exactly. In the elastic case kinetic energy is kept, and in the
+completely inelastic case the fragment sticks to the panel and both move
+as one rigid body. Our Python program calculates the satellite's velocity
+change, its spin and the energy lost for three scenarios and several
+parameter sweeps, and compares the velocity change with the orbital speed.
+We check the code in two ways. First, the momentum, angular momentum and
+energy before and after the hit must be equal up to round-off error.
+Second, a head-on hit through the centre of mass must give the textbook
+1-D results: with equal masses, the target should move at $v_0$ in the
+elastic case and at $v_0/2$ in the completely inelastic case
+\citep{ling2016}. At the end we compare our results with what was
+measured for Sentinel-1A \citep{krag2017}.

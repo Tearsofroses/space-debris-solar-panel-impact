@@ -1,0 +1,122 @@
+% =====================================================================
+% Packages and page setup
+% Formatting follows "General Formatting Requirements - Typed Paper"
+% (10-6-26): A4, 2.5 cm margins, 1.2 cm footer, Times font, 13 pt body,
+% 18 pt Heading 1, 13 pt Heading 2-4, single line spacing.
+% =====================================================================
+
+% --- Core and language (pdfLaTeX)
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[english,vietnamese]{babel}
+
+% --- Math (load before the Times fonts)
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{bm}
+
+% --- Times New Roman everywhere (TeX Gyre Termes is the metric clone of
+%     Times that pdfLaTeX can use with Vietnamese T5 encoding; mathptmx
+%     gives Times-style maths)
+\usepackage{tgtermes}
+\usepackage{mathptmx}
+
+% --- Page layout: A4, 2.5 cm margins, footer 1.2 cm
+\usepackage[
+    a4paper,
+    top=2.5cm,
+    bottom=2.5cm,
+    left=2.5cm,
+    right=2.5cm,
+    headheight=28pt,
+    headsep=0.4cm,
+    footskip=1.2cm
+]{geometry}
+
+% --- 13 pt body text, single line spacing (1.2 x font size)
+\makeatletter
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize{13pt}{15.6pt}%
+  \abovedisplayskip 6pt plus 2pt minus 2pt
+  \belowdisplayskip 6pt plus 2pt minus 2pt
+  \abovedisplayshortskip 3pt plus 2pt
+  \belowdisplayshortskip 3pt plus 2pt
+  \let\@listi\@listI}
+\normalsize
+\makeatother
+
+% Paragraphs: justified, no indent, 6 pt spacing (6 above + 6 below)
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 1pt}
+
+% --- Headings
+\usepackage{titlesec}
+% Heading 1: bold capitals, 18 pt, centred. Spacing: 6 pt here + 6 pt
+% paragraph skip = 12 pt above and below, as required.
+\titleformat{\section}[block]
+  {\centering\bfseries\fontsize{18pt}{21.6pt}\selectfont}
+  {\thesection.}{0.5em}{\MakeUppercase}
+\titlespacing*{\section}{0pt}{6pt}{6pt}
+% Heading 2: bold capitals, 13 pt, justified
+\titleformat{\subsection}
+  {\bfseries\fontsize{13pt}{15.6pt}\selectfont}
+  {\thesubsection.}{0.5em}{\MakeUppercase}
+\titlespacing*{\subsection}{0pt}{6pt}{6pt}
+% Heading 3: bold normal letters, 13 pt
+\titleformat{\subsubsection}
+  {\bfseries\fontsize{13pt}{15.6pt}\selectfont}
+  {\thesubsubsection.}{0.5em}{}
+\titlespacing*{\subsubsection}{0pt}{6pt}{6pt}
+% Heading 4: bold italics, 13 pt
+\titleformat{\paragraph}[block]
+  {\bfseries\itshape\fontsize{13pt}{15.6pt}\selectfont}
+  {}{0pt}{}
+\titlespacing*{\paragraph}{0pt}{6pt}{6pt}
+\setcounter{secnumdepth}{3}
+
+% --- Graphics, colour, floats, captions
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc}
+\usetikzlibrary{babel}
+\usepackage{float}
+\usepackage[font=normalsize,labelfont=bf,skip=4pt]{caption}
+\captionsetup[table]{position=bottom}
+\usepackage{subcaption}
+\usepackage{placeins}
+
+% --- Tables
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{makecell}
+
+% --- Lists
+\usepackage{enumitem}
+\setlist{itemsep=2pt, topsep=4pt, parsep=0pt}
+
+% --- Headers / footers
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+% --- Citations: APA-style author-year
+\usepackage[round,authoryear]{natbib}
+\setlength{\bibsep}{6pt}
+\setlength{\bibhang}{1.27cm}
+
+% --- Hyperref (keep last)
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=black, urlcolor=blue}
+\urlstyle{same}
+
+% --- Numbering of equations, figures and tables by section
+\numberwithin{equation}{section}
+\numberwithin{figure}{section}
+\numberwithin{table}{section}
+
+% --- Short-hands
+\renewcommand{\ttdefault}{ptm}  % file names also in Times
+\newcommand{\vect}[1]{\mathbf{#1}}
+\newcommand{\unit}[1]{\,\mathrm{#1}}

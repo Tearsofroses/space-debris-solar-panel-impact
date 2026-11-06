@@ -1,0 +1,34 @@
+% --- Abstract (max ~0.5 page, no tables/figures)
+\newpage
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+Space debris is a growing danger for satellites, and solar panels are the
+parts that get hit most often because they are so large. In this project,
+\textit{Space Debris Impact on Solar Panels}, we use conservation of linear
+momentum, $\mathbf{P}_{\mathrm{before}} = \mathbf{P}_{\mathrm{after}}$, to see
+how a small debris fragment changes a satellite's motion when it hits a
+panel. We want to find the impulse the satellite gets, its change in
+velocity, the spin it starts to have, and how much energy is lost, for
+different impact conditions. Our hypothesis is that the velocity change is
+tiny compared with the orbital speed, but the spin and the energy loss are
+not. A Python program uses the impulse--momentum theorem and conservation of
+linear and angular momentum to solve three scenarios, and it also runs
+sweeps over debris mass, impact speed, impact angle and mass ratio. We model
+the hit in two dimensions as an instant collision between a point-mass
+fragment and a rigid satellite. Two ideal cases are solved: an elastic
+collision with no friction, where the fragment bounces off, and a completely
+inelastic collision, where the fragment sticks to the panel. The spin comes
+from conservation of angular momentum about the centre of mass, and any
+kinetic energy that is not left as motion counts as lost. In the baseline
+case, a 1~g fragment at $10\unit{km\,s^{-1}}$ and $30^\circ$ sticks to the
+panel 4~m from the centre of mass of a 500~kg satellite. The satellite's
+velocity changes by only $20.0\unit{mm\,s^{-1}}$ ($2.6\times10^{-6}$ of its
+orbital speed), but it starts spinning at $1.65^\circ\unit{s^{-1}}$, and
+$99.999\%$ of the $50\unit{kJ}$ impact energy is lost as heat and damage.
+Momentum, angular momentum and energy balance to about $10^{-16}$. The sweeps
+show that the velocity change grows with debris mass and speed. For a
+bouncing fragment it gets smaller as the hit becomes more grazing, while a
+sticking fragment gives the same velocity change at every angle. Our model
+only covers the momentum exchange right at the hit; holes, cracks and other
+damage to the panel are not included.

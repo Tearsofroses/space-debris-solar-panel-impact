@@ -21,8 +21,19 @@ uv run main.py               # all scenarios + parametric study
 uv run main.py inputs/scenarios/baseline.json --no-parametric   # one scenario only
 ```
 
+Without uv: `pip install numpy pandas matplotlib`, then `python main.py`.
+
 To try a new case, copy a file in `inputs/scenarios/`, change the numbers and run it. Nothing
-physical is hard-coded in the Python files.
+physical is hard-coded in the Python files. Things to remember when you do this:
+
+- Also change the `"scenario"` name (and `"description"`) inside the copied file. The output
+  folder is named after `"scenario"`, so a copy that keeps `"baseline"` overwrites the
+  baseline results.
+- Running only one scenario rewrites `outputs/scenario_summary.csv` and
+  `outputs/conservation.csv` with that scenario only. Run `uv run main.py` afterwards to get
+  the full tables back.
+- `baseline.json` is also the reference case of the parametric study, so changing it changes
+  the sweeps too.
 
 ## Project structure
 
@@ -32,7 +43,7 @@ physics_model.py   equations: impulse-momentum, torque, conservation checks
 solvers.py         one-scenario solution and parametric sweeps
 input_parser.py    reads JSON/CSV, rejects non-physical inputs (m <= 0, unknown collision type,
                    impossible sweep ranges, ...)
-plotting.py        all figures (matplotlib, 300 dpi)
+plotting.py        all figures (matplotlib, 600 dpi, drawn at the size they have in the report)
 data/              constants.json (G*M_Earth, R_Earth), materials.csv (densities)
 inputs/            scenarios/*.json (one impact each), parametric_study.json
 outputs/           CSV tables (generated)
