@@ -1,0 +1,54 @@
+# Rebuilds the written paper (Physics_1_corrected/main.pdf) whenever its LaTeX
+# sources change, and commits the new PDF back to the same branch, so the PDF in
+# the repository always matches the .tex files.
+name: Build report PDF
+
+on:
+  push:
+    paths:
+      - "Physics_1_corrected/**"
+      - "!Physics_1_corrected/main.pdf"
+      - ".github/workflows/build-report.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-report-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Compile main.tex with pdfLaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          working_directory: Physics_1_corrected
+          root_file: main.tex
+          latexmk_use_lualatex: false
+
+      - name: Check the page limit (9-15 pages)
+        run: |
+          # pdfTeX writes the page count to the log: "Output written on main.pdf (15 pages, ...)"
+          pages=$(grep -o 'Output written on main.pdf ([0-9]*' Physics_1_corrected/main.log | grep -o '[0-9]*$')
+          echo "main.pdf has $pages pages"
+          echo "### main.pdf: $pages pages" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$pages" -lt 9 ] || [ "$pages" -gt 15 ]; then
+            echo "::warning::main.pdf has $pages pages; the course requires 9-15 pages total."
+          fi
+
+      - name: Commit the updated PDF
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Physics_1_corrected/main.pdf
+          if git diff --cached --quiet; then
+            echo "PDF unchanged."
+          else
+            git commit -m "Rebuild report PDF (${GITHUB_SHA::7})"
+            git push
+          fi

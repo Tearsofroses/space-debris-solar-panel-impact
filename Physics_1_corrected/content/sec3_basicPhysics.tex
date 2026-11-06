@@ -1,0 +1,171 @@
+\newpage
+\section{Basic Physics}
+\label{sec:basic-physics}
+
+\subsection{Physical system and reference frame}
+
+We describe the motion in a 2-D frame (Fig.~\ref{fig:geometry}).
+The $x$ axis points away from Earth, $y$ points along the direction of
+flight, and $z$ (out of the plane) is perpendicular to the orbit, representing the spin axis.
+
+The satellite (body and panels) is a rigid body with mass $M$ (kg) and moment
+of inertia $I$ (kg\,m$^2$) about the $z$ axis through its centre of mass (CoM). In a frame
+moving with the satellite, it is at rest before the hit.
+
+The fragment is a point mass $m$ (kg) moving at speed $v_0$ (m\,s$^{-1}$). It hits
+the panel at the point $\vect r$ (m) (measured from the CoM), at an angle
+$\theta$ from the outward normal $\hat{\vect n}$ of the panel. With the
+panel tangent $\hat{\vect t}=\hat{\vect z}\times\hat{\vect n}$, the
+velocity of the fragment and its speed along the normal are:
+\begin{equation}
+  \vect v_{d0}=-v_0\left(\cos\theta\,\hat{\vect n}+\sin\theta\,\hat{\vect t}\right),
+  \qquad v_n=v_0\cos\theta .
+  \label{eq:vd0}
+\end{equation}
+So $\theta=0$ is a head-on hit and $\theta$ close to $90^\circ$ is a
+grazing hit.
+
+\begin{itemize}
+  \item $\vect v_{d0}$: the initial velocity of the fragment (m\,s$^{-1}$)
+  \item $v_n$: the speed of the fragment along the normal (m\,s$^{-1}$)
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \begin{tikzpicture}[>=Stealth, font=\small]
+    \draw[thick, fill=gray!20] (-0.7,-0.55) rectangle (0.7,0.55);
+    \draw[thick, fill=blue!15] (0.7,-0.08) rectangle (6.2,0.08);
+    \fill (0,0) circle (1.6pt);
+    \node[above] at (0,0.02) {CoM};
+    \node[below] at (0,-0.55) {satellite $M,\ I$};
+    \draw[->, thick] (0,0) -- (5.2,0);
+    \node[below] at (3.0,-0.08) {$\vect r$};
+    \coordinate (P) at (5.2,0.08);
+    \draw[->, thick, red!70!black] (P) -- (5.2,1.5) node[above] {$\hat{\vect n}$};
+    \draw[->, thick, red!70!black] (P) -- (4.3,0.08);
+    \node[above, red!70!black] at (4.4,0.08) {$\hat{\vect t}$};
+    \draw[->, very thick, orange!80!black] (5.95,1.38) -- (5.27,0.2);
+    \fill[orange!80!black] (5.95,1.38) circle (2.2pt);
+    \node[right, orange!80!black] at (6.0,1.38) {debris $m$, $\vect v_{d0}$};
+    \draw (5.2,0.78) arc[start angle=90, end angle=60, radius=0.7];
+    \node at (5.42,1.05) {$\theta$};
+    \draw[->] (-3.2,-0.5) -- (-2.5,-0.5) node[right] {$x$};
+    \draw[->] (-3.2,-0.5) -- (-3.2,0.2) node[above] {$y$};
+    \node[below left] at (-3.2,-0.5) {$z\,\odot$};
+  \end{tikzpicture}
+  \caption{Geometry of the impact: a fragment of mass $m$ hits the panel at
+  lever arm $\vect r$ from the satellite's centre of mass, at angle
+  $\theta$ from the panel normal $\hat{\vect n}$.}
+  \label{fig:geometry}
+\end{figure}
+When the fragment hits the panel, it transfers momentum to the satellite. This can change both the satellite's linear and rotational motion. If the impact happens away from the centre of mass, it can also create a torque, causing the satellite to rotate. The impact angle affects how much of the fragment's velocity acts in the normal and tangential directions.
+
+\subsection{Conservation of linear and angular momentum}
+
+The contact lasts only microseconds, so the impulse from gravity
+($\sim\! M g\,\Delta t$) is tiny and we can treat the fragment and the
+satellite as an isolated system. This means its linear momentum and its
+angular momentum about the satellite's CoM do not change:
+\begin{equation}
+  \vect P = m\vect v_d + M\vect V = \text{const},\qquad
+  L_z = m\,(\vect r\times\vect v_d)_z + I\omega = \text{const},
+  \label{eq:conservation}
+\end{equation}
+where $\omega$ is the angular velocity of the satellite about $z$. So the
+momentum the fragment loses goes to the satellite, and since the fragment
+does not aim at the CoM, its angular momentum $m\,\vect r\times\vect v_d$
+becomes the satellite's spin.
+
+\subsection{Elastic collision: impulse and torque}
+
+For the elastic collision, the friction is neglected, so the panel can act on the fragment only along the normal, 
+delivering an impulse $J\hat{\vect n}$. By Newton's
+third law the satellite gets $-J\hat{\vect n}$. We apply the impulse--momentum theorem to each body, and its rotational version
+(torque $=$ lever arm $\times$ force) to the satellite. We get
+\begin{equation}
+  m\,\Delta\vect v_d = +J\hat{\vect n},\qquad
+  M\,\Delta\vect V = -J\hat{\vect n},\qquad
+  I\,\Delta\omega = \left(\vect r\times(-J\hat{\vect n})\right)_z = -J\,b,
+  \label{eq:impulse}
+\end{equation}
+where $m$ and $M$ (kg) are the masses of the fragment and the satellite,
+$\Delta\vect v_d$ and $\Delta\vect V$ (m\,s$^{-1}$) their velocity changes,
+$J$ (N\,s) the size of the impulse, $I$ (kg\,m$^2$) the satellite's moment
+of inertia about its CoM, $\Delta\omega$ (rad\,s$^{-1}$) its change in
+angular velocity, $\vect r$ (m) the impact point measured from the CoM, and
+$b=(\vect r\times\hat{\vect n})_z$ (m) the lever arm of the impulse about
+the CoM.
+The point of the panel that is hit moves with
+the velocity $\vect V+\vect\omega\times\vect r$, so the struck point moves back
+in two ways: by the motion of the whole satellite and by its rotation. Hence every unit of
+impulse changes the relative normal speed between the fragment and the struck
+point by
+\begin{equation}
+  k = \frac{1}{m}+\frac{1}{M}+\frac{b^{2}}{I},
+  \label{eq:k}
+\end{equation}
+Here $k$ is in kg$^{-1}$: $b^2/I$ has units m$^2$/(kg\,m$^2$) $=$ kg$^{-1}$,
+the same as $1/m$ and $1/M$.
+ The three terms come from the
+fragment, the satellite moving and the satellite rotating ($b$ appears twice: in the torque and in the speed $v=\omega b$ of the struck point). In an elastic collision the
+relative normal speed is reversed, as in the one-dimensional case,
+which gives
+
+\begin{equation}
+  J=\frac{2v_n}{k},
+  \label{eq:J-elastic}
+\end{equation}
+
+where $v_n$ (m\,s$^{-1}$) is the normal part of the approach speed.
+When the impulse passes through the CoM
+($b=0$), $1/k=mM/(m+M)$ and
+Eqs.~\eqref{eq:impulse}--\eqref{eq:J-elastic} reduce to the textbook 1-D result
+for a target initially at rest,
+$v_1'=\dfrac{m_1-m_2}{m_1+m_2}\,v_1$ and
+$v_2'=\dfrac{2m_1}{m_1+m_2}\,v_1$ \citep{ling2016},
+where $m_1$ and $m_2$ (kg) are the two masses, $v_1$ (m\,s$^{-1}$) is the
+initial speed of body~1 and $v_1'$, $v_2'$ (m\,s$^{-1}$) are the final
+speeds.
+Because the fragment's sideways velocity is unaffected, the
+fragment rebounds with most of its energy.
+
+\subsection{Completely inelastic collision: one rigid body}
+
+In the completely inelastic case the fragment sticks to the panel, so after
+the hit the satellite and the fragment are one rigid body. The centre of
+mass moves a little, to
+\begin{equation}
+  \vect r_c=\frac{m\,\vect r}{m+M},
+  \label{eq:rc}
+\end{equation}
+measured from the old CoM. Conservation of linear momentum gives the
+velocity of the new CoM:
+\begin{equation}
+  m\vect v_{d0}=(m+M)\,\vect v_{CM}.
+  \label{eq:vcm}
+\end{equation}
+We find the moment of inertia about the new CoM with the parallel-axis
+theorem (the old CoM is now $|\vect r_c|$ away and the fragment is
+$|\vect r-\vect r_c|$ away):
+\begin{equation}
+  I_c = I + M\,|\vect r_c|^{2} + m\,|\vect r-\vect r_c|^{2}.
+  \label{eq:Ic}
+\end{equation}
+Then conservation of angular momentum about the new CoM gives the spin:
+\begin{equation}
+  m\left((\vect r-\vect r_c)\times\vect v_{d0}\right)_z = I_c\,\omega .
+  \label{eq:omega-inelastic}
+\end{equation}
+After the hit, every point moves with
+$\vect v=\vect v_{CM}+\vect\omega\times\vect\rho$ ($\vect\rho$: position
+from the new CoM). Unlike the elastic case, the sideways momentum is also
+absorbed, so the satellite gets all of $m\vect v_{d0}$.
+
+\subsection{Energy}
+
+Kinetic energy is usually not conserved. We start with $K_0 = \frac{1}{2}mv_0^2$, and whatever is not left as kinetic energy of moving or turning is lost:
+\begin{equation}
+    E_{\text{diss}} = K_0 - \left[K_{d1} + \frac{1}{2}M|\Delta\vect V|^2 + \frac{1}{2}I\omega^2\right],
+  \label{eq:ediss}
+\end{equation}
+where $K_{d1} = \frac{1}{2}m|\vect v_{d1}|^2$ is the kinetic energy of the fragment after the hit. In the elastic case $E_{\text{diss}} = 0$. In the completely inelastic case it is $K_0 - \frac{1}{2}(m + M)v_{CM}^2 - \frac{1}{2}I_c\omega^2$. For a hit through the CoM this is a fraction $M / (m + M)$ of $K_0$, the same as a bullet getting stuck in a block \citep{halliday2014}. When $m \ll M$, almost all of $K_0$ becomes heat and damage.

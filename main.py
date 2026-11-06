@@ -45,8 +45,9 @@ def run_scenario(path, constants, materials):
     print(f"    satellite dV = {summary['sat_dv_mag_m_s'] * 1e3:.4g} mm/s "
           f"({summary['sat_dv_over_orbital_speed']:.2e} of orbital speed), "
           f"spin = {np.degrees(summary['sat_omega_rad_s']):.4g} deg/s")
-    print(f"    energy dissipated = {summary['dissipated_energy_J']:.4g} J "
-          f"of {summary['impact_energy_J']:.4g} J")
+    print(f"    energy dissipated = {summary['dissipated_energy_J']:.2f} J "
+          f"of {summary['impact_energy_J']:.2f} J "
+          f"({summary['dissipated_fraction']:.4%})")
     print(f"    conservation residuals: |dP|/P = {summary['momentum_rel_error']:.1e}, "
           f"|dL|/L = {summary['angular_momentum_rel_error']:.1e}, "
           f"|dE|/E = {summary['energy_rel_error']:.1e}")
